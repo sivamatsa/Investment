@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OxyLoans — Upload Excel</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="storage.js"></script>
+<style>
+:root{--bg:#060d1c;--bg2:#0c1628;--bg3:#111f35;--card:rgba(13,27,52,0.85);--gold:#c9a84c;--gold2:#e8c96a;--teal:#00c9a7;--red:#ff6b6b;--text:#dde8f0;--text2:#7a91aa;--border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.07);--shadow:0 8px 32px rgba(0,0,0,0.5);--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(0,100,200,0.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,76,0.06),transparent 60%);pointer-events:none;z-index:0}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:#060d1c}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{color:var(--gold);background:rgba(201,168,76,0.1)}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;font-family:'DM Sans',sans-serif}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;font-weight:600}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,0.3)}
+.btn-teal{background:rgba(0,201,167,0.15);color:var(--teal);border:1px solid rgba(0,201,167,0.3)}
+.btn-teal:hover{background:rgba(0,201,167,0.25)}
+.btn:disabled{opacity:0.4;cursor:not-allowed;transform:none!important}
+
+main{position:relative;z-index:1;padding:40px 32px;max-width:1200px;margin:0 auto}
+
+.page-header{text-align:center;margin-bottom:40px;animation:fadeUp 0.5s ease}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:700;margin-bottom:8px}
+.page-title span{color:var(--gold)}
+.page-subtitle{color:var(--text2);font-size:16px}
+
+/* UPLOAD ZONE */
+.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:60px 40px;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--card);backdrop-filter:blur(10px);position:relative;overflow:hidden;margin-bottom:24px;animation:fadeUp 0.5s ease 0.1s both}
+.upload-zone::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(201,168,76,0.03),transparent);pointer-events:none}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--gold);background:rgba(201,168,76,0.04);transform:scale(1.005)}
+.upload-zone.drag-over{border-color:var(--teal);box-shadow:0 0 40px rgba(0,201,167,0.1)}
+.upload-icon{font-size:56px;margin-bottom:16px;display:block;transition:transform 0.3s}
+.upload-zone:hover .upload-icon{transform:translateY(-4px)}
+.upload-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;margin-bottom:8px}
+.upload-sub{color:var(--text2);font-size:14px;margin-bottom:20px}
+.upload-formats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+.format-tag{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border2);color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+#fileInput{display:none}
+
+/* PROGRESS */
+.progress-wrap{display:none;margin:16px 0}
+.progress-bar-bg{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--teal));border-radius:2px;transition:width 0.3s;width:0%}
+.progress-text{font-size:12px;color:var(--text2);margin-top:6px;text-align:center}
+
+/* MAPPING */
+.mapping-section{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:24px;margin-bottom:24px;backdrop-filter:blur(10px);animation:fadeUp 0.4s ease both;display:none}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.section-title .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.mapping-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.map-row{display:flex;align-items:center;gap:12px;background:var(--bg3);border-radius:8px;padding:10px 14px}
+.map-label{font-size:12px;color:var(--gold);font-weight:600;flex:1;min-width:0}
+.map-arrow{color:var(--text2);font-size:14px}
+.map-select{background:var(--bg2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);flex:1;min-width:0;font-family:'DM Sans',sans-serif}
+.map-select:focus{outline:none;border-color:var(--gold)}
+
+/* PREVIEW */
+.preview-section{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;backdrop-filter:blur(10px);margin-bottom:24px;animation:fadeUp 0.4s ease 0.1s both;display:none}
+.preview-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border2)}
+.preview-stats{display:flex;gap:16px}
+.preview-stat{font-size:13px;color:var(--text2)}
+.preview-stat strong{color:var(--gold)}
+.preview-scroll{overflow-x:auto;max-height:400px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0}
+thead th{background:#0d1f3a;padding:10px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border2);transition:background 0.15s}
+tbody tr:hover{background:rgba(255,255,255,0.02)}
+tbody td{padding:9px 12px;color:var(--text);white-space:nowrap}
+
+/* VALIDATION */
+.validation-section{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;animation:fadeUp 0.4s ease both;display:none}
+.val-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.val-item{background:var(--bg3);border-radius:8px;padding:14px;text-align:center}
+.val-num{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700}
+.val-num.ok{color:var(--teal)}
+.val-num.warn{color:var(--gold)}
+.val-num.err{color:var(--red)}
+.val-label{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* ACTIONS */
+.action-bar{display:flex;gap:12px;justify-content:flex-end;animation:fadeUp 0.4s ease 0.2s both}
+
+/* TEMPLATE */
+.template-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;animation:fadeUp 0.4s ease 0.2s both}
+.template-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.template-cols{display:flex;flex-wrap:wrap;gap:6px}
+.col-chip{padding:4px 10px;border-radius:20px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.col-chip.required{border-color:rgba(201,168,76,0.4);color:var(--gold);background:rgba(201,168,76,0.08)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;max-width:320px}
+.toast-msg.success{border-left:3px solid var(--teal)}
+.toast-msg.error{border-left:3px solid var(--red)}
+.toast-msg.warn{border-left:3px solid var(--gold)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo">O</div>
+    <div class="nav-title">OxyLoans Portfolio</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📊 Dashboard</a>
+    <a class="nav-link active" href="upload.html">📤 Upload Excel</a>
+    <a class="nav-link" href="manual-entry.html">✏️ Manual Entry</a>
+    <a class="nav-link" href="analytics.html">🔬 Deep Analysis</a>
+    <a class="nav-link" href="storage-setup.html">⚙️ Storage</a>
+  </div>
+  <button class="btn btn-gold" onclick="window.location='index.html'">← Back to Dashboard</button>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="page-title">Upload <span>Excel File</span></div>
+    <div class="page-subtitle">Import your portfolio data from .xlsx or .csv files instantly</div>
+  </div>
+
+  <!-- TEMPLATE INFO -->
+  <div class="template-card">
+    <div class="template-header">
+      <div class="section-title" style="margin:0;font-size:18px"><div class="dot"></div> Expected Columns</div>
+      <button class="btn btn-outline" style="font-size:12px" onclick="downloadTemplate()">⬇ Download Template</button>
+    </div>
+    <div class="template-cols" id="templateCols"></div>
+  </div>
+
+  <!-- UPLOAD ZONE -->
+  <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+    <span class="upload-icon">📂</span>
+    <div class="upload-title">Drop your Excel file here</div>
+    <div class="upload-sub">or click to browse from your computer</div>
+    <div class="upload-formats">
+      <span class="format-tag">.xlsx</span>
+      <span class="format-tag">.xls</span>
+      <span class="format-tag">.csv</span>
+    </div>
+    <button class="btn btn-gold" onclick="event.stopPropagation();document.getElementById('fileInput').click()">Choose File</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileInput(event)">
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+      <div class="progress-text" id="progressText">Processing...</div>
+    </div>
+  </div>
+
+  <!-- COLUMN MAPPING -->
+  <div class="mapping-section" id="mappingSection">
+    <div class="section-title"><div class="dot"></div> Column Mapping <span style="font-size:13px;color:var(--text2);font-family:'DM Sans',sans-serif;font-weight:400;margin-left:8px">Map your Excel columns to the required fields</span></div>
+    <div class="mapping-grid" id="mappingGrid"></div>
+    <button class="btn btn-teal" onclick="applyMapping()">✓ Apply Mapping & Preview</button>
+  </div>
+
+  <!-- VALIDATION SUMMARY -->
+  <div class="validation-section" id="validationSection">
+    <div class="section-title" style="margin-bottom:14px"><div class="dot"></div> Data Validation</div>
+    <div class="val-grid" id="valGrid"></div>
+  </div>
+
+  <!-- PREVIEW TABLE -->
+  <div class="preview-section" id="previewSection">
+    <div class="preview-header">
+      <div class="section-title" style="margin:0;font-size:18px"><div class="dot"></div> Data Preview</div>
+      <div class="preview-stats">
+        <span class="preview-stat">Rows: <strong id="rowCount">0</strong></span>
+        <span class="preview-stat">Columns: <strong id="colCount">0</strong></span>
+        <span class="preview-stat" id="sheetInfo"></span>
+      </div>
+    </div>
+    <div class="preview-scroll"><table id="previewTable"><thead id="previewHead"></thead><tbody id="previewBody"></tbody></table></div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar" id="actionBar" style="display:none">
+    <button class="btn btn-outline" onclick="resetUpload()">✕ Cancel</button>
+    <button class="btn btn-outline" onclick="window.location='manual-entry.html'">✏ Edit Manually</button>
+    <button class="btn btn-gold" id="importBtn" onclick="importData()">✅ Import to Dashboard</button>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'oxyloans_portfolio';
+
+const FIELD_MAP = {
+  dealId: ['deal id','deal id in oxyloans','dealid','id'],
+  dealName: ['deal name','dealname','name of deal','deal'],
+  participatedAmount: ['participated amount','deal participated amount','amount','invest amount','investment'],
+  daysToEnd: ['days to end','days to end the deal','days remaining','days left'],
+  daysToReceiveIR: ['days to receive','days to receive monthly ir','ir days'],
+  irDateDay: ['ir date','ir date - day','ir day','interest date'],
+  monthlyIR: ['monthly ir','monthly ir by oxy','monthly interest','monthly ir by oxy april'],
+  interestReceived: ['interest received','ir received','interest paid'],
+  commentsIR: ['comments','comments - ir','ir comments','remarks'],
+  irStartDate: ['ir starting date','ir start date','start date','interest start'],
+  irEndDate: ['ir end date','end date','interest end'],
+  oxyloansCreditAmt: ['oxyloans credit amt','oxy credit','credit amount'],
+  investDebitAmt: ['invest debit amt','debit amount','invest debit'],
+  interestPaidToOxy: ['interest paid to oxy','paid to oxy','oxy payment'],
+  walletBalance: ['wallet balance','wallet','balance'],
+  participatedDate: ['participated date','date','investment date','join date'],
+  roi: ['roi','return','return on investment','interest rate','rate'],
+  months: ['months','tenure','duration'],
+  totalInterestToReceive: ['total interest','total interest should receive','total interest to receive','expected interest'],
+  balanceIRFromOxy: ['balance ir','balance ir from oxy','pending ir','remaining interest'],
+  dealStatus: ['deal status','status'],
+  payoutType: ['monthly/yearly payout','payout','payout type','payment type'],
+  dealOpenClosed: ['deal open / closed','open closed','deal open closed','open/closed'],
+  dealUserId: ['deal user id','user id','userid'],
+  name: ['name','investor name','user name','customer name']
+};
+
+const REQUIRED_FIELDS = ['dealName','participatedAmount','roi','dealStatus','dealOpenClosed'];
+const FIELD_LABELS = {
+  dealId:'Deal ID',dealName:'Deal Name',participatedAmount:'Participated Amount',daysToEnd:'Days to End',
+  daysToReceiveIR:'Days to Receive IR',irDateDay:'IR Date Day',monthlyIR:'Monthly IR',
+  interestReceived:'Interest Received',commentsIR:'Comments IR',irStartDate:'IR Start Date',
+  irEndDate:'IR End Date',oxyloansCreditAmt:'Oxyloans Credit Amt',investDebitAmt:'Invest Debit Amt',
+  interestPaidToOxy:'Interest Paid to Oxy',walletBalance:'Wallet Balance',participatedDate:'Participated Date',
+  roi:'ROI',months:'Months',totalInterestToReceive:'Total Interest to Receive',
+  balanceIRFromOxy:'Balance IR from Oxy',dealStatus:'Deal Status',payoutType:'Payout Type',
+  dealOpenClosed:'Deal Open/Closed',dealUserId:'Deal User ID',name:'Name'
+};
+
+let rawData = [];
+let excelHeaders = [];
+let mappedData = [];
+let currentFile = null;
+
+// Template columns display
+document.getElementById('templateCols').innerHTML = Object.entries(FIELD_LABELS)
+  .map(([k,v])=>`<span class="col-chip${REQUIRED_FIELDS.includes(k)?' required':''}">${v}${REQUIRED_FIELDS.includes(k)?'*':''}</span>`)
+  .join('');
+
+// Drag & Drop
+function handleDragOver(e) { e.preventDefault(); document.getElementById('uploadZone').classList.add('drag-over'); }
+function handleDragLeave(e) { document.getElementById('uploadZone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if(file) processFile(file);
+}
+function handleFileInput(e) { const f=e.target.files[0]; if(f) processFile(f); }
+
+function processFile(file) {
+  currentFile = file;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls','csv'].includes(ext)) { toast('Please upload .xlsx, .xls or .csv files','error'); return; }
+
+  const prog = document.getElementById('progressWrap');
+  const fill = document.getElementById('progressFill');
+  const txt  = document.getElementById('progressText');
+  prog.style.display='block';
+  let pct=0;
+  const interval = setInterval(()=>{ pct=Math.min(pct+15,90); fill.style.width=pct+'%'; },100);
+
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    clearInterval(interval);
+    fill.style.width='100%';
+    txt.textContent = 'Parsing data...';
+    setTimeout(()=>{
+      try {
+        const wb = XLSX.read(e.target.result, {type:'binary',cellDates:true});
+        const sheetName = wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        rawData = XLSX.utils.sheet_to_json(ws, {header:1,raw:false,dateNF:'yyyy-mm-dd'});
+        if(!rawData.length){toast('File appears to be empty','error');prog.style.display='none';return;}
+        excelHeaders = rawData[0].map(h=>String(h||'').trim());
+        document.getElementById('sheetInfo').innerHTML = `Sheet: <strong>${sheetName}</strong>`;
+        prog.style.display='none';
+        showMapping();
+        toast(`Loaded "${file.name}" — ${rawData.length-1} rows detected`,'success');
+      } catch(err) { toast('Failed to parse file: '+err.message,'error'); prog.style.display='none'; }
+    },300);
+  };
+  reader.readAsBinaryString(file);
+}
+
+function autoMap(header) {
+  const h = header.toLowerCase().trim();
+  for(const [field, aliases] of Object.entries(FIELD_MAP)) {
+    if(aliases.some(a=>h.includes(a)||a.includes(h))) return field;
+  }
+  return '';
+}
+
+function showMapping() {
+  const grid = document.getElementById('mappingGrid');
+  grid.innerHTML = Object.entries(FIELD_LABELS).map(([field,label])=>{
+    const autoMapped = autoMap(excelHeaders.find(h=>autoMap(h)===field)||'');
+    const selected = excelHeaders.findIndex(h=>autoMap(h)===field);
+    const opts = excelHeaders.map((h,i)=>`<option value="${i}"${i===selected?' selected':''}>${h}</option>`).join('');
+    const isReq = REQUIRED_FIELDS.includes(field);
+    return `<div class="map-row">
+      <span class="map-label">${label}${isReq?'<span style="color:var(--red)">*</span>':''}</span>
+      <span class="map-arrow">→</span>
+      <select class="map-select" id="map_${field}">
+        <option value="">— Skip —</option>${opts}
+      </select>
+    </div>`;
+  }).join('');
+  document.getElementById('mappingSection').style.display='block';
+  document.getElementById('mappingSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function applyMapping() {
+  const dataRows = rawData.slice(1);
+  mappedData = dataRows.map(row=>{
+    const obj = {};
+    for(const field of Object.keys(FIELD_LABELS)) {
+      const sel = document.getElementById('map_'+field);
+      if(sel && sel.value!=='') {
+        let val = row[+sel.value];
+        if(val===undefined||val===null||val==='') val=null;
+        // Type coercion
+        if(['participatedAmount','daysToEnd','daysToReceiveIR','irDateDay','monthlyIR','interestReceived',
+            'oxyloansCreditAmt','investDebitAmt','interestPaidToOxy','walletBalance','roi','months',
+            'totalInterestToReceive','balanceIRFromOxy'].includes(field)) {
+          val = val!=null ? parseFloat(String(val).replace(/[^0-9.-]/g,''))||0 : 0;
+        }
+        obj[field] = val;
+      }
+    }
+    // Auto-generate dealId if missing
+    if(!obj.dealId) obj.dealId = 'OXY'+String(Math.random()).slice(2,8);
+    return obj;
+  }).filter(row=>row.dealName||row.participatedAmount);
+
+  showValidation(mappedData);
+  renderPreview(mappedData);
+  document.getElementById('actionBar').style.display='flex';
+  toast(`Mapped ${mappedData.length} records successfully`,'success');
+}
+
+function showValidation(data) {
+  const total = data.length;
+  const complete = data.filter(d=>REQUIRED_FIELDS.every(f=>d[f]!=null&&d[f]!=='')).length;
+  const withROI = data.filter(d=>d.roi&&d.roi>0).length;
+  const open = data.filter(d=>(d.dealOpenClosed||'').toLowerCase().includes('open')).length;
+
+  document.getElementById('valGrid').innerHTML = `
+    <div class="val-item"><div class="val-num ok">${total}</div><div class="val-label">Total Rows</div></div>
+    <div class="val-item"><div class="val-num ${complete===total?'ok':'warn'}">${complete}</div><div class="val-label">Complete Records</div></div>
+    <div class="val-item"><div class="val-num ok">${withROI}</div><div class="val-label">With ROI Data</div></div>
+    <div class="val-item"><div class="val-num ok">${open}</div><div class="val-label">Open Deals</div></div>`;
+  document.getElementById('validationSection').style.display='block';
+}
+
+function renderPreview(data) {
+  if(!data.length) return;
+  const keys = Object.keys(FIELD_LABELS);
+  const head = document.getElementById('previewHead');
+  const body = document.getElementById('previewBody');
+  head.innerHTML = '<tr>'+keys.map(k=>`<th>${FIELD_LABELS[k]}</th>`).join('')+'</tr>';
+  const preview = data.slice(0,50);
+  body.innerHTML = preview.map(row=>'<tr>'+keys.map(k=>{
+    const v = row[k];
+    if(v===null||v===undefined||v==='') return '<td style="color:var(--text2)">—</td>';
+    if(k==='dealOpenClosed') return `<td><span style="padding:2px 8px;border-radius:10px;font-size:11px;background:${String(v).toLowerCase().includes('open')?'rgba(0,201,167,0.15)':'rgba(255,107,107,0.15)'};color:${String(v).toLowerCase().includes('open')?'var(--teal)':'var(--red)'}">${v}</span></td>`;
+    if(k==='roi') return `<td style="color:var(--gold)">${v}%</td>`;
+    if(['participatedAmount','monthlyIR','interestReceived','totalInterestToReceive','walletBalance'].includes(k)) return `<td>₹${Number(v).toLocaleString('en-IN')}</td>`;
+    return `<td>${v}</td>`;
+  }).join('')+'</tr>').join('');
+  document.getElementById('rowCount').textContent = data.length;
+  document.getElementById('colCount').textContent = keys.length;
+  document.getElementById('previewSection').style.display='block';
+  document.getElementById('previewSection').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function importData() {
+  if(!mappedData.length){toast('No data to import','error');return;}
+  const btn = document.getElementById('importBtn');
+  btn.disabled = true; btn.textContent = '⏳ Importing...';
+
+  setTimeout(async () => {
+    try {
+      const existing = Local.load() || [];
+      const existingIds = new Set(existing.map(d=>d.dealId));
+      const newRecords = mappedData.filter(d=>!existingIds.has(d.dealId));
+      const merged = [...existing, ...newRecords];
+
+      const results = await Storage.save(merged);
+      const cloudMsg = results.jsonbin ? ' + ☁️ Cloud' : results.gsheets ? ' + 📊 Sheets' : '';
+      toast(`✅ Imported ${newRecords.length} new deals${cloudMsg} (${mappedData.length-newRecords.length} duplicates skipped)`,'success');
+      setTimeout(()=>window.location='index.html',1800);
+    } catch(e) { toast('Import failed: '+e.message,'error'); btn.disabled=false; btn.textContent='✅ Import to Dashboard'; }
+  },600);
+}
+
+function resetUpload() {
+  rawData=[]; excelHeaders=[]; mappedData=[];
+  document.getElementById('fileInput').value='';
+  ['mappingSection','validationSection','previewSection'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('actionBar').style.display='none';
+  toast('Upload reset','warn');
+}
+
+function downloadTemplate() {
+  const headers = Object.values(FIELD_LABELS);
+  const sampleRow = ['OXY001','Real Estate Fund A','500000','45','12','15','4167','25000','On time','2025-04-01','2026-04-01','500000','500000','25000','527500','2025-04-01','11','12','55000','30000','Active','Monthly','Open','USR001','John Doe'];
+  const ws = XLSX.utils.aoa_to_sheet([headers,sampleRow]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,'OxyLoans Portfolio',ws);
+  XLSX.writeFile(wb,'OxyLoans_Portfolio_Template.xlsx');
+  toast('Template downloaded','success');
+}
+
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className=`toast-msg ${type}`;
+  el.innerHTML=`${type==='success'?'✅':type==='error'?'❌':'⚠️'} ${msg}`;
+  t.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},4000);
+}
+</script>
+</body>
+</html>

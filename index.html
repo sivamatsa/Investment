@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OxyLoans — Investment Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="storage.js"></script>
+<style>
+:root {
+  --bg: #060d1c;
+  --bg2: #0c1628;
+  --bg3: #111f35;
+  --card: rgba(13, 27, 52, 0.85);
+  --gold: #c9a84c;
+  --gold2: #e8c96a;
+  --teal: #00c9a7;
+  --red: #ff6b6b;
+  --text: #dde8f0;
+  --text2: #7a91aa;
+  --border: rgba(201, 168, 76, 0.18);
+  --border2: rgba(255,255,255,0.07);
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --radius: 12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(0,100,200,0.08) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,76,0.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:100;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-brand{display:flex;align-items:center;gap:12px}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:#060d1c}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold);letter-spacing:0.5px}
+.nav-subtitle{font-size:11px;color:var(--text2);margin-top:-2px}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;color:var(--text2);text-decoration:none;transition:all 0.2s;cursor:pointer}
+.nav-link:hover,.nav-link.active{color:var(--gold);background:rgba(201,168,76,0.1)}
+.nav-actions{display:flex;gap:8px}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;font-family:'DM Sans',sans-serif}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;font-weight:600}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,0.3)}
+
+/* MAIN */
+main{position:relative;z-index:1;padding:28px 32px;max-width:1800px;margin:0 auto}
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--text);line-height:1.1}
+.page-title span{color:var(--gold)}
+.page-subtitle{font-size:14px;color:var(--text2);margin-top:4px}
+.last-updated{font-size:12px;color:var(--text2);background:var(--bg3);padding:6px 14px;border-radius:20px;border:1px solid var(--border2)}
+
+/* FILTER BAR */
+.filter-bar{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;backdrop-filter:blur(10px)}
+.filter-label{font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.filter-group{display:flex;align-items:center;gap:8px}
+.slicer{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.slicer:hover,.slicer:focus{border-color:var(--gold);outline:none;color:var(--gold)}
+.filter-divider{width:1px;height:24px;background:var(--border2)}
+.chip-group{display:flex;gap:6px;flex-wrap:wrap}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text2);transition:all 0.2s}
+.chip.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;border-color:transparent;font-weight:600}
+.chip:hover:not(.active){border-color:var(--gold);color:var(--gold)}
+#searchInput{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--text);width:200px;font-family:'DM Sans',sans-serif}
+#searchInput:focus{outline:none;border-color:var(--gold)}
+#searchInput::placeholder{color:var(--text2)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:14px;margin-bottom:24px}
+.kpi-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:18px 16px;backdrop-filter:blur(10px);position:relative;overflow:hidden;transition:all 0.25s;cursor:default}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:opacity 0.3s}
+.kpi-card:hover{transform:translateY(-3px);box-shadow:var(--shadow);border-color:var(--border)}
+.kpi-card:hover::before{opacity:1}
+.kpi-card.green::before,.kpi-card.green .kpi-icon{color:var(--teal)}
+.kpi-card.green .kpi-bar{background:var(--teal)}
+.kpi-card.red::before{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.kpi-card.red .kpi-icon{color:var(--red)}
+.kpi-icon{font-size:22px;margin-bottom:10px;display:block}
+.kpi-label{font-size:11px;color:var(--text2);font-weight:500;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px}
+.kpi-value{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--text);line-height:1;margin-bottom:8px}
+.kpi-value.gold{color:var(--gold)}
+.kpi-sub{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.kpi-sub .up{color:var(--teal)}
+.kpi-sub .down{color:var(--red)}
+.kpi-bar-bg{height:3px;background:var(--bg3);border-radius:2px;margin-top:10px}
+.kpi-bar{height:3px;border-radius:2px;background:var(--gold);transition:width 1s ease}
+
+/* CHART GRID */
+.chart-row{display:grid;gap:16px;margin-bottom:16px}
+.chart-row.cols-3{grid-template-columns:1fr 1fr 1fr}
+.chart-row.cols-2{grid-template-columns:2fr 1fr}
+.chart-row.cols-2b{grid-template-columns:1fr 2fr}
+
+.chart-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;backdrop-filter:blur(10px);position:relative;overflow:hidden}
+.chart-card::after{content:'';position:absolute;bottom:0;right:0;width:100px;height:100px;background:radial-gradient(circle,rgba(201,168,76,0.04) 0%,transparent 70%);pointer-events:none}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--text)}
+.chart-badge{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:500}
+.chart-badge.live{background:rgba(0,201,167,0.15);color:var(--teal);border:1px solid rgba(0,201,167,0.3)}
+.chart-badge.warn{background:rgba(255,107,107,0.15);color:var(--red);border:1px solid rgba(255,107,107,0.3)}
+.chart-wrap{position:relative}
+
+/* TABLE */
+.table-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;backdrop-filter:blur(10px);margin-bottom:24px}
+.table-header-row{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border2)}
+.table-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600}
+.table-controls{display:flex;gap:8px;align-items:center}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:rgba(201,168,76,0.06);padding:12px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+thead th:hover{color:var(--gold2)}
+tbody tr{border-bottom:1px solid var(--border2);transition:background 0.15s}
+tbody tr:hover{background:rgba(255,255,255,0.03)}
+tbody td{padding:11px 14px;color:var(--text);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.open{background:rgba(0,201,167,0.15);color:var(--teal)}
+.badge.closed{background:rgba(255,107,107,0.15);color:var(--red)}
+.badge.active{background:rgba(201,168,76,0.15);color:var(--gold)}
+.badge.pending{background:rgba(120,130,160,0.15);color:var(--text2)}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border2);font-size:13px;color:var(--text2)}
+.page-btns{display:flex;gap:4px}
+.page-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-size:13px;transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.page-btn:hover,.page-btn.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.1)}
+
+/* TIMELINE */
+.timeline-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;backdrop-filter:blur(10px);margin-bottom:16px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .icon{font-size:48px;margin-bottom:16px;opacity:0.4}
+.empty-state h3{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--text);margin-bottom:8px}
+.empty-state p{font-size:14px;margin-bottom:20px}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;max-width:320px}
+.toast-msg.success{border-left:3px solid var(--teal)}
+.toast-msg.error{border-left:3px solid var(--red)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:90%;max-width:600px;max-height:85vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+.modal-header{padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px;border-radius:6px;transition:color 0.2s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:24px}
+
+/* RESPONSIVE */
+@media(max-width:1400px){.kpi-grid{grid-template-columns:repeat(4,1fr)}}
+@media(max-width:1100px){.chart-row.cols-3{grid-template-columns:1fr 1fr}.chart-row.cols-2,.chart-row.cols-2b{grid-template-columns:1fr}}
+@media(max-width:768px){.kpi-grid{grid-template-columns:repeat(2,1fr)};main{padding:16px};nav{padding:0 16px}}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.fade-up{animation:fadeUp 0.5s ease both}
+.delay-1{animation-delay:0.1s}.delay-2{animation-delay:0.2s}.delay-3{animation-delay:0.3s}.delay-4{animation-delay:0.4s}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">O</div>
+    <div>
+      <div class="nav-title">OxyLoans Portfolio</div>
+      <div class="nav-subtitle">Investment Intelligence Dashboard</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <a class="nav-link active" href="index.html">📊 Dashboard</a>
+    <a class="nav-link" href="upload.html">📤 Upload Excel</a>
+    <a class="nav-link" href="manual-entry.html">✏️ Manual Entry</a>
+    <a class="nav-link" href="analytics.html">🔬 Deep Analysis</a>
+    <a class="nav-link" href="storage-setup.html">⚙️ Storage</a>
+  </div>
+  <div class="nav-actions">
+    <div id="storageBadge" style="margin-right:4px"></div>
+    <button class="btn btn-outline" onclick="clearData()">🗑 Clear Data</button>
+    <button class="btn btn-gold" onclick="window.location='upload.html'">+ Add Deals</button>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header fade-up">
+    <div>
+      <div class="page-title">Portfolio <span>Overview</span></div>
+      <div class="page-subtitle">Real-time investment tracking & analytics</div>
+    </div>
+    <span class="last-updated" id="lastUpdated">No data loaded</span>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar fade-up delay-1">
+    <span class="filter-label">🎛 Filters</span>
+    <div class="filter-group">
+      <select class="slicer" id="filterStatus" onchange="applyFilters()">
+        <option value="">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Matured">Matured</option>
+        <option value="Pending">Pending</option>
+      </select>
+      <select class="slicer" id="filterPayout" onchange="applyFilters()">
+        <option value="">All Payout Types</option>
+        <option value="Monthly">Monthly</option>
+        <option value="Yearly">Yearly</option>
+      </select>
+      <select class="slicer" id="filterOpenClosed" onchange="applyFilters()">
+        <option value="">Open & Closed</option>
+        <option value="Open">Open</option>
+        <option value="Closed">Closed</option>
+      </select>
+      <select class="slicer" id="filterName" onchange="applyFilters()">
+        <option value="">All Users</option>
+      </select>
+    </div>
+    <div class="filter-divider"></div>
+    <div class="filter-group">
+      <span style="font-size:12px;color:var(--text2)">Date Range:</span>
+      <input type="date" class="slicer" id="dateFrom" onchange="applyFilters()" style="width:140px">
+      <span style="color:var(--text2)">—</span>
+      <input type="date" class="slicer" id="dateTo" onchange="applyFilters()" style="width:140px">
+    </div>
+    <div class="filter-divider"></div>
+    <input type="text" class="slicer" id="searchInput" placeholder="🔍 Search deals..." oninput="applyFilters()" style="width:200px">
+    <button class="btn btn-outline" onclick="resetFilters()" style="margin-left:auto;font-size:12px">Reset</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="kpi-card fade-up delay-1">
+      <span class="kpi-icon">💰</span>
+      <div class="kpi-label">Total Invested</div>
+      <div class="kpi-value gold" id="kpi-invested">₹0</div>
+      <div class="kpi-sub"><span id="kpi-invested-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-invested" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-1 green">
+      <span class="kpi-icon" style="color:var(--teal)">📈</span>
+      <div class="kpi-label">Interest Received</div>
+      <div class="kpi-value" id="kpi-received">₹0</div>
+      <div class="kpi-sub"><span class="up" id="kpi-received-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-received" style="width:0%;background:var(--teal)"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-2">
+      <span class="kpi-icon">🎯</span>
+      <div class="kpi-label">Total Expected IR</div>
+      <div class="kpi-value" id="kpi-expected">₹0</div>
+      <div class="kpi-sub"><span id="kpi-expected-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-expected" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-2 red">
+      <span class="kpi-icon" style="color:var(--red)">⏳</span>
+      <div class="kpi-label">Balance IR from Oxy</div>
+      <div class="kpi-value" id="kpi-balance">₹0</div>
+      <div class="kpi-sub"><span id="kpi-balance-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-balance" style="width:0%;background:var(--red)"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-3">
+      <span class="kpi-icon">🏦</span>
+      <div class="kpi-label">Wallet Balance</div>
+      <div class="kpi-value" id="kpi-wallet">₹0</div>
+      <div class="kpi-sub"><span id="kpi-wallet-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-wallet" style="width:0%"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-3 green">
+      <span class="kpi-icon" style="color:var(--teal)">📊</span>
+      <div class="kpi-label">Average ROI</div>
+      <div class="kpi-value" id="kpi-roi">0%</div>
+      <div class="kpi-sub"><span id="kpi-roi-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-roi" style="width:0%;background:var(--teal)"></div></div>
+    </div>
+    <div class="kpi-card fade-up delay-4">
+      <span class="kpi-icon">📂</span>
+      <div class="kpi-label">Active Deals</div>
+      <div class="kpi-value" id="kpi-deals">0</div>
+      <div class="kpi-sub"><span id="kpi-deals-sub">—</span></div>
+      <div class="kpi-bar-bg"><div class="kpi-bar" id="bar-deals" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 1 -->
+  <div class="chart-row cols-3 fade-up delay-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Investment by Deal</div>
+        <span class="chart-badge live">Live</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartInvestment"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Deal Status</div>
+        <span class="chart-badge live">Portfolio</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartStatus"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Payout Distribution</div>
+        <span class="chart-badge">Type</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartPayout"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 2 -->
+  <div class="chart-row cols-2 fade-up delay-3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Monthly Interest Timeline</div>
+        <span class="chart-badge live">Trend</span>
+      </div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chartTimeline"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">ROI by Deal</div>
+        <span class="chart-badge">Performance</span>
+      </div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chartRoi"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW 3 -->
+  <div class="chart-row cols-2b fade-up delay-3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Interest: Received vs Expected</div>
+        <span class="chart-badge warn">Gap Analysis</span>
+      </div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chartGap"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title">Days to Deal End (Heatmap)</div>
+        <span class="chart-badge">Maturity</span>
+      </div>
+      <div class="chart-wrap" style="height:240px"><canvas id="chartDays"></canvas></div>
+    </div>
+  </div>
+
+  <!-- DATA TABLE -->
+  <div class="table-card fade-up delay-4">
+    <div class="table-header-row">
+      <div class="chart-title" style="font-family:'Cormorant Garamond',serif;font-size:20px">Deal Register</div>
+      <div class="table-controls">
+        <span id="tableCount" style="font-size:13px;color:var(--text2)">0 deals</span>
+        <select class="slicer" id="rowsPerPage" onchange="renderTable()" style="width:110px">
+          <option value="10">10 rows</option>
+          <option value="20">20 rows</option>
+          <option value="50">50 rows</option>
+        </select>
+        <button class="btn btn-outline" style="font-size:12px" onclick="exportTable()">⬇ Export CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('dealId')">#</th>
+            <th onclick="sortTable('dealName')">Deal Name ↕</th>
+            <th onclick="sortTable('participatedAmount')">Invested ↕</th>
+            <th onclick="sortTable('roi')">ROI ↕</th>
+            <th onclick="sortTable('monthlyIR')">Monthly IR ↕</th>
+            <th onclick="sortTable('interestReceived')">IR Received ↕</th>
+            <th onclick="sortTable('totalInterestToReceive')">Total Expected ↕</th>
+            <th onclick="sortTable('balanceIRFromOxy')">Balance IR ↕</th>
+            <th onclick="sortTable('daysToEnd')">Days to End ↕</th>
+            <th onclick="sortTable('dealStatus')">Status</th>
+            <th onclick="sortTable('dealOpenClosed')">Open/Closed</th>
+            <th onclick="sortTable('payoutType')">Payout</th>
+            <th onclick="sortTable('name')">User</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <span id="paginationInfo">Showing 0 of 0</span>
+      <div class="page-btns" id="pageBtns"></div>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE -->
+  <div class="empty-state" id="emptyState" style="display:none">
+    <div class="icon">📭</div>
+    <h3>No Portfolio Data Yet</h3>
+    <p>Upload an Excel file or manually enter your investment deals to get started.</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-gold" onclick="window.location='upload.html'">📤 Upload Excel</button>
+      <button class="btn btn-outline" onclick="window.location='manual-entry.html'">✏️ Enter Manually</button>
+      <button class="btn btn-outline" onclick="loadSampleData()">🎲 Load Sample Data</button>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ── DATA STORE ──────────────────────────────────────────────
+let allData = [];
+let filteredData = [];
+let sortKey = 'dealName';
+let sortDir = 1;
+let currentPage = 1;
+let charts = {};
+
+const STORAGE_KEY = 'oxyloans_portfolio';
+
+function loadData() {
+  // Sync load from localStorage immediately
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    allData = raw ? JSON.parse(raw) : [];
+  } catch { allData = []; }
+}
+
+function saveData(data) {
+  allData = data;
+  // Use Storage manager — saves locally + cloud if configured
+  Storage.save(data).then(results => {
+    const ts = new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY + '_ts', ts);
+    const el = document.getElementById('lastUpdated');
+    if (el) el.textContent = 'Updated ' + new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    if (results.jsonbin) showSyncIndicator('☁️ Cloud saved');
+    else if (results.gsheets) showSyncIndicator('📊 Sheets saved');
+  });
+}
+
+function clearData() {
+  if (!confirm('Clear all portfolio data?')) return;
+  Storage.clear().then(() => {
+    allData = [];
+    filteredData = [];
+    initDashboard();
+    toast('Data cleared', 'success');
+  });
+}
+
+function showSyncIndicator(msg) {
+  const el = document.getElementById('lastUpdated');
+  if (!el) return;
+  const prev = el.textContent;
+  el.textContent = msg;
+  setTimeout(() => el.textContent = prev, 2000);
+}
+
+// ── SAMPLE DATA ──────────────────────────────────────────────
+function loadSampleData() {
+  const sample = [
+    {dealId:'OXY001',dealName:'Real Estate Fund Alpha',participatedAmount:500000,daysToEnd:45,daysToReceiveIR:12,irDateDay:15,monthlyIR:4583,interestReceived:27500,commentsIR:'On time',irStartDate:'2025-04-01',irEndDate:'2026-05-01',oxyloansCreditAmt:500000,investDebitAmt:500000,interestPaidToOxy:27500,walletBalance:527500,participatedDate:'2025-04-01',roi:11,months:12,totalInterestToReceive:55000,balanceIRFromOxy:27500,dealStatus:'Active',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR001',name:'Rajesh Kumar'},
+    {dealId:'OXY002',dealName:'Infrastructure Bond B',participatedAmount:300000,daysToEnd:90,daysToReceiveIR:5,irDateDay:10,monthlyIR:2500,interestReceived:15000,commentsIR:'Delayed by 2 days',irStartDate:'2025-06-01',irEndDate:'2026-08-01',oxyloansCreditAmt:300000,investDebitAmt:300000,interestPaidToOxy:15000,walletBalance:315000,participatedDate:'2025-06-01',roi:10,months:14,totalInterestToReceive:35000,balanceIRFromOxy:20000,dealStatus:'Active',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR002',name:'Priya Sharma'},
+    {dealId:'OXY003',dealName:'Commercial Realty Fund',participatedAmount:1000000,daysToEnd:180,daysToReceiveIR:20,irDateDay:5,monthlyIR:10000,interestReceived:60000,commentsIR:'On time',irStartDate:'2025-01-01',irEndDate:'2026-10-01',oxyloansCreditAmt:1000000,investDebitAmt:1000000,interestPaidToOxy:60000,walletBalance:1060000,participatedDate:'2025-01-01',roi:12,months:21,totalInterestToReceive:210000,balanceIRFromOxy:150000,dealStatus:'Active',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR001',name:'Rajesh Kumar'},
+    {dealId:'OXY004',dealName:'SME Lending Pool',participatedAmount:200000,daysToEnd:-10,daysToReceiveIR:0,irDateDay:20,monthlyIR:1833,interestReceived:22000,commentsIR:'Completed',irStartDate:'2024-10-01',irEndDate:'2025-11-01',oxyloansCreditAmt:200000,investDebitAmt:200000,interestPaidToOxy:22000,walletBalance:222000,participatedDate:'2024-10-01',roi:11,months:12,totalInterestToReceive:22000,balanceIRFromOxy:0,dealStatus:'Matured',payoutType:'Yearly',dealOpenClosed:'Closed',dealUserId:'USR003',name:'Amit Patel'},
+    {dealId:'OXY005',dealName:'Housing Finance Tranche C',participatedAmount:750000,daysToEnd:60,daysToReceiveIR:8,irDateDay:25,monthlyIR:6875,interestReceived:41250,commentsIR:'On time',irStartDate:'2025-03-01',irEndDate:'2026-06-01',oxyloansCreditAmt:750000,investDebitAmt:750000,interestPaidToOxy:41250,walletBalance:791250,participatedDate:'2025-03-01',roi:11,months:15,totalInterestToReceive:103125,balanceIRFromOxy:61875,dealStatus:'Active',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR002',name:'Priya Sharma'},
+    {dealId:'OXY006',dealName:'Tech Park Realty',participatedAmount:400000,daysToEnd:120,daysToReceiveIR:15,irDateDay:12,monthlyIR:4000,interestReceived:24000,commentsIR:'On time',irStartDate:'2025-05-01',irEndDate:'2026-09-01',oxyloansCreditAmt:400000,investDebitAmt:400000,interestPaidToOxy:24000,walletBalance:424000,participatedDate:'2025-05-01',roi:12,months:16,totalInterestToReceive:64000,balanceIRFromOxy:40000,dealStatus:'Active',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR004',name:'Sunita Rao'},
+    {dealId:'OXY007',dealName:'MSME Credit Pool D',participatedAmount:150000,daysToEnd:30,daysToReceiveIR:3,irDateDay:1,monthlyIR:1375,interestReceived:8250,commentsIR:'Pending',irStartDate:'2025-08-01',irEndDate:'2026-04-01',oxyloansCreditAmt:150000,investDebitAmt:150000,interestPaidToOxy:8250,walletBalance:158250,participatedDate:'2025-08-01',roi:11,months:8,totalInterestToReceive:11000,balanceIRFromOxy:2750,dealStatus:'Pending',payoutType:'Monthly',dealOpenClosed:'Open',dealUserId:'USR003',name:'Amit Patel'},
+    {dealId:'OXY008',dealName:'Logistics Warehouse Fund',participatedAmount:600000,daysToEnd:-30,daysToReceiveIR:0,irDateDay:18,monthlyIR:6000,interestReceived:72000,commentsIR:'Completed',irStartDate:'2024-08-01',irEndDate:'2025-10-01',oxyloansCreditAmt:600000,investDebitAmt:600000,interestPaidToOxy:72000,walletBalance:672000,participatedDate:'2024-08-01',roi:12,months:12,totalInterestToReceive:72000,balanceIRFromOxy:0,dealStatus:'Matured',payoutType:'Yearly',dealOpenClosed:'Closed',dealUserId:'USR001',name:'Rajesh Kumar'},
+  ];
+  saveData(sample);
+  toast('Sample data loaded — 8 deals', 'success');
+  initDashboard();
+}
+
+// ── FILTERS ──────────────────────────────────────────────────
+function applyFilters() {
+  const status = document.getElementById('filterStatus').value;
+  const payout = document.getElementById('filterPayout').value;
+  const openClosed = document.getElementById('filterOpenClosed').value;
+  const name = document.getElementById('filterName').value;
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  filteredData = allData.filter(d => {
+    if (status && d.dealStatus !== status) return false;
+    if (payout && d.payoutType !== payout) return false;
+    if (openClosed && d.dealOpenClosed !== openClosed) return false;
+    if (name && d.name !== name) return false;
+    if (from && d.participatedDate < from) return false;
+    if (to && d.participatedDate > to) return false;
+    if (search && !JSON.stringify(d).toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  currentPage = 1;
+  updateKPIs();
+  updateCharts();
+  renderTable();
+}
+
+function resetFilters() {
+  ['filterStatus','filterPayout','filterOpenClosed','filterName','dateFrom','dateTo'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  document.getElementById('searchInput').value = '';
+  applyFilters();
+}
+
+function populateNameFilter() {
+  const names = [...new Set(allData.map(d => d.name).filter(Boolean))];
+  const sel = document.getElementById('filterName');
+  sel.innerHTML = '<option value="">All Users</option>' + names.map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
+// ── KPIs ─────────────────────────────────────────────────────
+function fmt(n) {
+  if (!n && n !== 0) return '—';
+  if (Math.abs(n) >= 1e7) return '₹' + (n/1e7).toFixed(2) + 'Cr';
+  if (Math.abs(n) >= 1e5) return '₹' + (n/1e5).toFixed(2) + 'L';
+  return '₹' + n.toLocaleString('en-IN');
+}
+
+function updateKPIs() {
+  const d = filteredData;
+  const totalInvested = d.reduce((a,b)=>a+(+b.participatedAmount||0),0);
+  const totalReceived = d.reduce((a,b)=>a+(+b.interestReceived||0),0);
+  const totalExpected = d.reduce((a,b)=>a+(+b.totalInterestToReceive||0),0);
+  const totalBalance  = d.reduce((a,b)=>a+(+b.balanceIRFromOxy||0),0);
+  const totalWallet   = d.reduce((a,b)=>a+(+b.walletBalance||0),0);
+  const avgRoi = d.length ? (d.reduce((a,b)=>a+(+b.roi||0),0)/d.length).toFixed(1) : 0;
+  const activeDeals = d.filter(x=>x.dealOpenClosed==='Open').length;
+
+  setKPI('invested', fmt(totalInvested), `${d.length} deals`, Math.min(100,totalInvested/100000));
+  setKPI('received', fmt(totalReceived), totalExpected ? `${((totalReceived/totalExpected)*100).toFixed(1)}% collected` : '—', totalExpected?(totalReceived/totalExpected)*100:0);
+  setKPI('expected', fmt(totalExpected), `Target interest`, 70);
+  setKPI('balance',  fmt(totalBalance),  `Pending from Oxy`, totalExpected?(totalBalance/totalExpected)*100:0);
+  setKPI('wallet',   fmt(totalWallet),   `Across ${d.length} deals`, 80);
+  setKPI('roi',      avgRoi+'%',         `Avg across portfolio`, avgRoi*5);
+  setKPI('deals',    activeDeals,        `${d.filter(x=>x.dealOpenClosed==='Closed').length} closed`, (activeDeals/Math.max(d.length,1))*100);
+}
+
+function setKPI(id, val, sub, barPct) {
+  document.getElementById('kpi-'+id).textContent = val;
+  document.getElementById('kpi-'+id+'-sub').textContent = sub;
+  setTimeout(()=>{
+    const bar = document.getElementById('bar-'+id);
+    if(bar) bar.style.width = Math.min(100,Math.max(0,barPct))+'%';
+  },300);
+}
+
+// ── CHARTS ───────────────────────────────────────────────────
+const CHART_DEFAULTS = {
+  color: '#dde8f0',
+  grid: 'rgba(255,255,255,0.06)',
+  tick: '#7a91aa',
+};
+const PALETTE = ['#c9a84c','#00c9a7','#ff6b6b','#4c9be8','#c96bc9','#6bc9c9','#c9c96b','#ff9f6b'];
+
+function destroyChart(id) { if(charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function updateCharts() {
+  const d = filteredData;
+
+  // Chart 1: Investment by Deal (Horizontal bar)
+  destroyChart('investment');
+  const topDeals = [...d].sort((a,b)=>(b.participatedAmount||0)-(a.participatedAmount||0)).slice(0,8);
+  charts.investment = new Chart(document.getElementById('chartInvestment'), {
+    type:'bar',
+    data:{
+      labels: topDeals.map(x=>x.dealName?.substring(0,18)||x.dealId),
+      datasets:[{data:topDeals.map(x=>x.participatedAmount||0),backgroundColor:PALETTE,borderRadius:6,borderSkipped:false}]
+    },
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{color:CHART_DEFAULTS.tick,callback:v=>fmt(v)},grid:{color:CHART_DEFAULTS.grid}},y:{ticks:{color:CHART_DEFAULTS.tick,font:{size:11}},grid:{display:false}}}}
+  });
+
+  // Chart 2: Deal Status (Doughnut)
+  destroyChart('status');
+  const statusCounts = {};
+  d.forEach(x=>{statusCounts[x.dealStatus||'Unknown']=(statusCounts[x.dealStatus||'Unknown']||0)+1});
+  charts.status = new Chart(document.getElementById('chartStatus'), {
+    type:'doughnut',
+    data:{labels:Object.keys(statusCounts),datasets:[{data:Object.values(statusCounts),backgroundColor:['#c9a84c','#00c9a7','#ff6b6b','#4c9be8'],hoverOffset:8,borderWidth:2,borderColor:'#0c1628'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:CHART_DEFAULTS.tick,boxWidth:10,padding:12,font:{size:11}}}},cutout:'65%'}
+  });
+
+  // Chart 3: Payout Distribution (Pie)
+  destroyChart('payout');
+  const payCounts = {};
+  d.forEach(x=>{payCounts[x.payoutType||'Unknown']=(payCounts[x.payoutType||'Unknown']||0)+1});
+  charts.payout = new Chart(document.getElementById('chartPayout'), {
+    type:'pie',
+    data:{labels:Object.keys(payCounts),datasets:[{data:Object.values(payCounts),backgroundColor:['#c9a84c','#00c9a7','#4c9be8','#ff6b6b'],borderWidth:2,borderColor:'#0c1628',hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:CHART_DEFAULTS.tick,boxWidth:10,padding:12,font:{size:11}}}}}
+  });
+
+  // Chart 4: Monthly IR Timeline (Line)
+  destroyChart('timeline');
+  const byMonth = {};
+  d.forEach(x=>{
+    const m = (x.irStartDate||'').substring(0,7);
+    if(m) byMonth[m]=(byMonth[m]||0)+(+x.monthlyIR||0);
+  });
+  const months = Object.keys(byMonth).sort();
+  charts.timeline = new Chart(document.getElementById('chartTimeline'), {
+    type:'line',
+    data:{labels:months,datasets:[{label:'Monthly IR',data:months.map(m=>byMonth[m]),borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#c9a84c',pointRadius:5,pointHoverRadius:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmt(c.raw)}}},scales:{x:{ticks:{color:CHART_DEFAULTS.tick},grid:{color:CHART_DEFAULTS.grid}},y:{ticks:{color:CHART_DEFAULTS.tick,callback:v=>fmt(v)},grid:{color:CHART_DEFAULTS.grid}}}}
+  });
+
+  // Chart 5: ROI by Deal (Bar)
+  destroyChart('roi');
+  const roiData = [...d].sort((a,b)=>(b.roi||0)-(a.roi||0)).slice(0,10);
+  charts.roi = new Chart(document.getElementById('chartRoi'), {
+    type:'bar',
+    data:{labels:roiData.map(x=>x.dealName?.substring(0,14)||x.dealId),datasets:[{label:'ROI %',data:roiData.map(x=>x.roi||0),backgroundColor:roiData.map(x=>(x.roi||0)>=12?'#c9a84c':x.roi>=10?'#00c9a7':'#4c9be8'),borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:CHART_DEFAULTS.tick,font:{size:10}},grid:{display:false}},y:{ticks:{color:CHART_DEFAULTS.tick,callback:v=>v+'%'},grid:{color:CHART_DEFAULTS.grid}}}}
+  });
+
+  // Chart 6: IR Received vs Expected (Grouped Bar)
+  destroyChart('gap');
+  const top6 = d.slice(0,6);
+  charts.gap = new Chart(document.getElementById('chartGap'), {
+    type:'bar',
+    data:{
+      labels:top6.map(x=>x.dealName?.substring(0,16)||x.dealId),
+      datasets:[
+        {label:'Received',data:top6.map(x=>x.interestReceived||0),backgroundColor:'rgba(0,201,167,0.7)',borderRadius:4},
+        {label:'Expected',data:top6.map(x=>x.totalInterestToReceive||0),backgroundColor:'rgba(201,168,76,0.35)',borderRadius:4,borderWidth:2,borderColor:'rgba(201,168,76,0.7)'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:CHART_DEFAULTS.tick,boxWidth:10,font:{size:11}}}},scales:{x:{ticks:{color:CHART_DEFAULTS.tick,font:{size:10}},grid:{display:false}},y:{ticks:{color:CHART_DEFAULTS.tick,callback:v=>fmt(v)},grid:{color:CHART_DEFAULTS.grid}}}}
+  });
+
+  // Chart 7: Days to End (bubble-like scatter)
+  destroyChart('days');
+  const daysData = d.filter(x=>x.daysToEnd!==undefined).map(x=>({x:+x.daysToEnd||0,y:+x.roi||0,r:Math.max(5,Math.min(20,(+x.participatedAmount||0)/100000))}));
+  charts.days = new Chart(document.getElementById('chartDays'), {
+    type:'bubble',
+    data:{datasets:[{label:'Deals',data:daysData,backgroundColor:daysData.map(p=>p.x<0?'rgba(255,107,107,0.7)':p.x<60?'rgba(201,168,76,0.7)':'rgba(0,201,167,0.7)'),borderWidth:0}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Days: ${c.parsed.x} | ROI: ${c.parsed.y}%`}}},scales:{x:{title:{display:true,text:'Days to End',color:CHART_DEFAULTS.tick},ticks:{color:CHART_DEFAULTS.tick},grid:{color:CHART_DEFAULTS.grid}},y:{title:{display:true,text:'ROI %',color:CHART_DEFAULTS.tick},ticks:{color:CHART_DEFAULTS.tick},grid:{color:CHART_DEFAULTS.grid}}}}
+  });
+}
+
+// ── TABLE ────────────────────────────────────────────────────
+function sortTable(key) {
+  if(sortKey===key) sortDir*=-1;
+  else { sortKey=key; sortDir=1; }
+  renderTable();
+}
+
+function renderTable() {
+  const sorted = [...filteredData].sort((a,b)=>{
+    const av=a[sortKey], bv=b[sortKey];
+    if(typeof av==='number') return (av-bv)*sortDir;
+    return String(av||'').localeCompare(String(bv||''))*sortDir;
+  });
+
+  const rpp = +document.getElementById('rowsPerPage').value || 10;
+  const total = sorted.length;
+  const maxPage = Math.ceil(total/rpp)||1;
+  currentPage = Math.min(currentPage, maxPage);
+  const page = sorted.slice((currentPage-1)*rpp, currentPage*rpp);
+
+  document.getElementById('tableCount').textContent = total+' deals';
+  document.getElementById('paginationInfo').textContent = `Showing ${Math.min((currentPage-1)*rpp+1,total)}–${Math.min(currentPage*rpp,total)} of ${total}`;
+
+  const body = document.getElementById('tableBody');
+  body.innerHTML = page.map(d=>`
+    <tr>
+      <td style="color:var(--text2);font-size:11px">${d.dealId||'—'}</td>
+      <td style="font-weight:500;color:var(--gold)">${d.dealName||'—'}</td>
+      <td>${fmt(d.participatedAmount)}</td>
+      <td><span style="color:${(d.roi||0)>=12?'var(--teal)':'var(--gold)'}">${d.roi||0}%</span></td>
+      <td>${fmt(d.monthlyIR)}</td>
+      <td style="color:var(--teal)">${fmt(d.interestReceived)}</td>
+      <td>${fmt(d.totalInterestToReceive)}</td>
+      <td style="color:${(d.balanceIRFromOxy||0)>0?'var(--red)':'var(--teal)'}">${fmt(d.balanceIRFromOxy)}</td>
+      <td><span style="color:${(d.daysToEnd||0)<0?'var(--red)':(d.daysToEnd||0)<60?'var(--gold)':'var(--teal)'}">${d.daysToEnd!=null?d.daysToEnd+' days':'—'}</span></td>
+      <td><span class="badge ${(d.dealStatus||'').toLowerCase()}">${d.dealStatus||'—'}</span></td>
+      <td><span class="badge ${(d.dealOpenClosed||'').toLowerCase()}">${d.dealOpenClosed||'—'}</span></td>
+      <td><span style="font-size:11px;color:var(--text2)">${d.payoutType||'—'}</span></td>
+      <td>${d.name||'—'}</td>
+    </tr>`).join('');
+
+  // Pagination
+  const btns = document.getElementById('pageBtns');
+  btns.innerHTML = '';
+  for(let i=1;i<=maxPage;i++){
+    const b = document.createElement('button');
+    b.className = 'page-btn'+(i===currentPage?' active':'');
+    b.textContent = i;
+    b.onclick = ()=>{currentPage=i;renderTable();};
+    btns.appendChild(b);
+  }
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function exportTable() {
+  if(!filteredData.length){toast('No data to export','error');return;}
+  const headers = Object.keys(filteredData[0]);
+  const csv = [headers.join(','), ...filteredData.map(r=>headers.map(h=>`"${r[h]??''}"`).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'oxyloans_portfolio.csv';
+  a.click();
+  toast('CSV exported successfully','success');
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const t = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = `toast-msg ${type}`;
+  el.innerHTML = `${type==='success'?'✅':'❌'} ${msg}`;
+  t.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},3000);
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+function initDashboard() {
+  const ts = localStorage.getItem(STORAGE_KEY+'_ts');
+  document.getElementById('lastUpdated').textContent = ts
+    ? 'Updated ' + new Date(ts).toLocaleString('en-IN',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+    : 'No data loaded';
+
+  const hasData = allData.length > 0;
+  document.getElementById('emptyState').style.display = hasData ? 'none' : 'block';
+  document.querySelectorAll('.kpi-grid,.chart-row,.table-card').forEach(el=>{
+    el.style.display = hasData ? '' : 'none';
+  });
+
+  if(hasData) {
+    populateNameFilter();
+    filteredData = [...allData];
+    updateKPIs();
+    updateCharts();
+    renderTable();
+  }
+}
+
+// ── CHART.JS GLOBAL DEFAULTS ─────────────────────────────────
+Chart.defaults.color = '#7a91aa';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.plugins.tooltip.backgroundColor = '#0c1628';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(201,168,76,0.3)';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.titleColor = '#dde8f0';
+Chart.defaults.plugins.tooltip.bodyColor = '#7a91aa';
+Chart.defaults.plugins.tooltip.padding = 10;
+Chart.defaults.animation.duration = 800;
+
+// ── BOOT ─────────────────────────────────────────────────────
+(async () => {
+  // 1. Show localStorage data instantly
+  loadData();
+  initDashboard();
+  renderStorageBadge('storageBadge');
+
+  // 2. Then try cloud in background
+  const cloudData = await Storage.load();
+  if (cloudData && cloudData.length > allData.length) {
+    allData = cloudData;
+    filteredData = [...allData];
+    initDashboard();
+    toast('☁️ Synced from cloud — ' + cloudData.length + ' deals', 'success');
+  }
+})();
+</script>
+</body>
+</html>

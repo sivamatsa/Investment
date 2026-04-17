@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OxyLoans — Storage Setup</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060d1c;--bg2:#0c1628;--bg3:#111f35;--card:rgba(13,27,52,0.85);--gold:#c9a84c;--gold2:#e8c96a;--teal:#00c9a7;--red:#ff6b6b;--blue:#4c9be8;--text:#dde8f0;--text2:#7a91aa;--border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.07);--shadow:0 8px 32px rgba(0,0,0,0.5);--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(0,100,200,0.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,76,0.06),transparent 60%);pointer-events:none;z-index:0}
+nav{position:sticky;top:0;z-index:100;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:#060d1c}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold)}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;font-family:'DM Sans',sans-serif}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;font-weight:600}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,0.3)}
+.btn-teal{background:rgba(0,201,167,0.12);color:var(--teal);border:1px solid rgba(0,201,167,0.25)}
+.btn-teal:hover{background:rgba(0,201,167,0.22)}
+.btn-blue{background:rgba(76,155,232,0.12);color:var(--blue);border:1px solid rgba(76,155,232,0.25)}
+.btn-blue:hover{background:rgba(76,155,232,0.22)}
+.btn-sm{padding:6px 14px;font-size:12px}
+
+main{position:relative;z-index:1;padding:40px 32px;max-width:900px;margin:0 auto}
+
+.page-header{margin-bottom:32px;animation:fadeUp 0.4s ease}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700}
+.page-title span{color:var(--gold)}
+.page-sub{color:var(--text2);font-size:14px;margin-top:6px}
+
+/* OPTIONS GRID */
+.options-grid{display:grid;gap:16px;margin-bottom:32px}
+.option-card{background:var(--card);border:2px solid var(--border2);border-radius:16px;padding:24px;backdrop-filter:blur(10px);transition:all 0.25s;animation:fadeUp 0.4s ease both;position:relative;overflow:hidden}
+.option-card.active-option{border-color:var(--teal)}
+.option-card.active-option::after{content:'✓ ACTIVE';position:absolute;top:14px;right:14px;font-size:10px;font-weight:700;color:var(--teal);background:rgba(0,201,167,0.12);padding:3px 8px;border-radius:10px;border:1px solid rgba(0,201,167,0.3)}
+.option-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
+.option-icon{font-size:32px;flex-shrink:0}
+.option-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;margin-bottom:4px}
+.option-desc{font-size:13px;color:var(--text2);line-height:1.5}
+.option-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.meta-tag{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border2)}
+.meta-tag.free{background:rgba(0,201,167,0.1);color:var(--teal);border-color:rgba(0,201,167,0.2)}
+.meta-tag.paid{background:rgba(255,107,107,0.1);color:var(--red);border-color:rgba(255,107,107,0.2)}
+.meta-tag.easy{background:rgba(201,168,76,0.1);color:var(--gold);border-color:rgba(201,168,76,0.2)}
+.meta-tag.cloud{background:rgba(76,155,232,0.1);color:var(--blue);border-color:rgba(76,155,232,0.2)}
+.meta-tag.local{background:rgba(120,130,160,0.1);color:var(--text2);border-color:rgba(120,130,160,0.2)}
+
+/* FORM FIELDS */
+.field-group{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.field-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;gap:6px}
+.field-input{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;width:100%;transition:border-color 0.2s}
+.field-input:focus{outline:none;border-color:var(--gold)}
+.field-input::placeholder{color:var(--text2)}
+.field-hint{font-size:11px;color:var(--text2);line-height:1.5}
+.field-row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end}
+
+/* STEPS */
+.steps{counter-reset:step;display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.step{display:flex;gap:12px;align-items:flex-start;font-size:13px;line-height:1.5}
+.step::before{counter-increment:step;content:counter(step);width:22px;height:22px;border-radius:50%;background:rgba(201,168,76,0.15);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;border:1px solid rgba(201,168,76,0.3)}
+.step a{color:var(--teal);text-decoration:none}
+.step a:hover{text-decoration:underline}
+code{background:var(--bg3);padding:2px 6px;border-radius:4px;font-size:12px;color:var(--gold);font-family:monospace;border:1px solid var(--border2)}
+
+/* STATUS PANEL */
+.status-panel{background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:16px;margin-bottom:16px}
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);font-size:13px}
+.status-row:last-child{border:none}
+.status-dot{width:8px;height:8px;border-radius:50%;margin-right:8px}
+.status-ok{background:var(--teal)}
+.status-warn{background:var(--gold)}
+.status-off{background:var(--text2)}
+
+/* APPS SCRIPT CODE */
+.code-block{background:#0a1628;border:1px solid var(--border2);border-radius:8px;padding:16px;font-family:monospace;font-size:11px;color:#a8c4e0;line-height:1.6;overflow-x:auto;margin:8px 0;position:relative}
+.copy-btn{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border2);border-radius:4px;padding:3px 8px;font-size:10px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif}
+.copy-btn:hover{border-color:var(--gold);color:var(--gold)}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border2);margin:24px 0}
+
+/* TOGGLE */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.toggle-label{font-size:14px}
+.toggle-sub{font-size:12px;color:var(--text2)}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;border-radius:24px;background:var(--bg3);border:1px solid var(--border2);cursor:pointer;transition:0.2s}
+.toggle-slider::before{content:'';position:absolute;width:16px;height:16px;border-radius:50%;background:var(--text2);top:3px;left:3px;transition:0.2s}
+input:checked+.toggle-slider{background:rgba(0,201,167,0.2);border-color:var(--teal)}
+input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--teal)}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn 0.3s ease}
+.toast-msg.success{border-left:3px solid var(--teal)}
+.toast-msg.error{border-left:3px solid var(--red)}
+.toast-msg.warn{border-left:3px solid var(--gold)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo">O</div>
+    <div class="nav-title">OxyLoans Portfolio</div>
+  </a>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-outline" onclick="exportBackup()">📥 Backup Now</button>
+    <button class="btn btn-gold" onclick="window.location='index.html'">← Dashboard</button>
+  </div>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div class="page-title">⚙️ Storage <span>Setup</span></div>
+    <div class="page-sub">Choose how your portfolio data is saved and synced across sessions and devices.</div>
+  </div>
+
+  <!-- STATUS -->
+  <div class="status-panel" id="statusPanel">
+    <div class="status-row">
+      <span><span class="status-dot status-ok" style="display:inline-block"></span>Browser Storage (localStorage)</span>
+      <span id="localStatus" style="font-size:12px;color:var(--teal)">Active — 0 deals</span>
+    </div>
+    <div class="status-row">
+      <span><span class="status-dot status-off" id="jsonbinDot" style="display:inline-block"></span>JSONBin.io Cloud Sync</span>
+      <span id="jsonbinStatus" style="font-size:12px;color:var(--text2)">Not configured</span>
+    </div>
+    <div class="status-row">
+      <span><span class="status-dot status-off" id="gsheetsDot" style="display:inline-block"></span>Google Sheets Sync</span>
+      <span id="gsheetsStatus" style="font-size:12px;color:var(--text2)">Not configured</span>
+    </div>
+    <div class="status-row">
+      <span><span class="status-dot" id="autoDot" style="display:inline-block;background:var(--text2)"></span>Auto Excel Backup</span>
+      <span id="autoStatus" style="font-size:12px;color:var(--text2)">Disabled</span>
+    </div>
+  </div>
+
+  <!-- OPTIONS -->
+  <div class="options-grid">
+
+    <!-- OPTION 1: localStorage -->
+    <div class="option-card" id="card-local">
+      <div class="option-header">
+        <div class="option-icon">💾</div>
+        <div>
+          <div class="option-title">Browser Storage (Already Active)</div>
+          <div class="option-desc">Data is stored inside your browser. Persists across refreshes automatically — as long as you use the same browser and don't clear browser data or use incognito mode.</div>
+        </div>
+      </div>
+      <div class="option-meta">
+        <span class="meta-tag free">Free</span>
+        <span class="meta-tag easy">Zero Setup</span>
+        <span class="meta-tag local">Local Only</span>
+      </div>
+      <div style="background:rgba(255,107,107,0.06);border:1px solid rgba(255,107,107,0.15);border-radius:8px;padding:12px;font-size:12px;color:var(--text2)">
+        ⚠️ <strong style="color:var(--red)">Data will be lost if:</strong> you clear browser cache/cookies, use a different browser or device, use Incognito/Private mode, or uninstall the browser.
+      </div>
+    </div>
+
+    <!-- OPTION 2: JSONBin -->
+    <div class="option-card" id="card-jsonbin">
+      <div class="option-header">
+        <div class="option-icon">☁️</div>
+        <div>
+          <div class="option-title">JSONBin.io — Free Cloud Sync</div>
+          <div class="option-desc">Store your portfolio data in the cloud for free. Works across all browsers and devices. No server needed — just a free API key. <strong>Recommended for GitHub Pages.</strong></div>
+        </div>
+      </div>
+      <div class="option-meta">
+        <span class="meta-tag free">Free (10K req/month)</span>
+        <span class="meta-tag easy">Easy Setup</span>
+        <span class="meta-tag cloud">Cross-Device</span>
+      </div>
+      <div class="steps">
+        <div class="step">Go to <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> and create a free account.</div>
+        <div class="step">In your dashboard click <strong>API Keys</strong> → Generate a new key. Copy the <code>Master Key</code>.</div>
+        <div class="step">Paste the key below and click <strong>Create Bin</strong> — we'll auto-create a storage bin for you.</div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">Master Key (X-Master-Key)</div>
+        <div class="field-row">
+          <input type="password" class="field-input" id="jsonbinApiKey" placeholder="$2b$10$... (paste your Master Key)">
+          <button class="btn btn-teal btn-sm" onclick="createBin()">Create Bin</button>
+        </div>
+        <div class="field-hint">Your key is stored only in your browser — never sent to any third party server.</div>
+      </div>
+      <div class="field-group" id="binIdGroup" style="display:none">
+        <div class="field-label">Bin ID (auto-filled)</div>
+        <input type="text" class="field-input" id="jsonbinBinId" placeholder="auto-created...">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-teal" onclick="saveJsonBin()">💾 Save & Test Connection</button>
+        <button class="btn btn-outline btn-sm" onclick="clearJsonBin()">Clear</button>
+      </div>
+    </div>
+
+    <!-- OPTION 3: Google Sheets -->
+    <div class="option-card" id="card-gsheets">
+      <div class="option-header">
+        <div class="option-icon">📊</div>
+        <div>
+          <div class="option-title">Google Sheets — Spreadsheet Backend</div>
+          <div class="option-desc">Use a Google Sheet as your database. Your data lives in Excel-like cells in Google Drive. Requires a one-time Apps Script setup (5 minutes). <strong>Best for Excel lovers.</strong></div>
+        </div>
+      </div>
+      <div class="option-meta">
+        <span class="meta-tag free">Free</span>
+        <span class="meta-tag cloud">Cross-Device</span>
+        <span class="meta-tag easy">5-min setup</span>
+      </div>
+      <div class="steps">
+        <div class="step">Open <a href="https://sheets.google.com" target="_blank">Google Sheets</a> → create a new spreadsheet named <code>OxyLoans Portfolio</code>.</div>
+        <div class="step">In the sheet, click <strong>Extensions → Apps Script</strong>. Delete all existing code.</div>
+        <div class="step">Paste the code below into the Apps Script editor and click 💾 Save.</div>
+        <div class="step">Click <strong>Deploy → New Deployment</strong> → Type: <strong>Web App</strong> → Execute as: <strong>Me</strong> → Access: <strong>Anyone</strong> → Deploy. Copy the <em>Web App URL</em>.</div>
+        <div class="step">Paste the URL below and click Save.</div>
+      </div>
+
+      <div class="code-block" id="appsScriptCode">
+<button class="copy-btn" onclick="copyCode()">Copy</button>
+function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Data') || ss.insertSheet('Data');
+
+  if (e.parameter.action === 'load') {
+    var data = sheet.getDataRange().getValues();
+    if (data.length < 2) return ok([]);
+    var headers = data[0];
+    var rows = data.slice(1).map(function(row) {
+      var obj = {};
+      headers.forEach(function(h, i) { obj[h] = row[i]; });
+      return obj;
+    });
+    return ok(rows);
+  }
+  return ok([]);
+}
+
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName('Data') || ss.insertSheet('Data');
+  var payload = JSON.parse(e.postData.contents);
+
+  if (payload.action === 'save' && Array.isArray(payload.data)) {
+    sheet.clearContents();
+    if (payload.data.length === 0) return ok('cleared');
+    var keys = Object.keys(payload.data[0]);
+    sheet.appendRow(keys);
+    payload.data.forEach(function(row) {
+      sheet.appendRow(keys.map(function(k) { return row[k] || ''; }));
+    });
+    return ok('saved ' + payload.data.length + ' rows');
+  }
+  return ok('no action');
+}
+
+function ok(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ success: true, data: data }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</div>
+
+      <div class="field-group" style="margin-top:12px">
+        <div class="field-label">Apps Script Web App URL</div>
+        <div class="field-row">
+          <input type="text" class="field-input" id="gsheetsUrl" placeholder="https://script.google.com/macros/s/...">
+          <button class="btn btn-blue btn-sm" onclick="testGSheets()">Test</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-blue" onclick="saveGSheets()">💾 Save & Connect</button>
+        <button class="btn btn-outline btn-sm" onclick="clearGSheets()">Clear</button>
+      </div>
+    </div>
+
+    <!-- OPTION 4: Auto Excel Backup -->
+    <div class="option-card" id="card-excel">
+      <div class="option-header">
+        <div class="option-icon">📁</div>
+        <div>
+          <div class="option-title">Auto Excel Backup</div>
+          <div class="option-desc">Automatically download an Excel (.xlsx) file to your computer every time you save or import data. You can re-upload this file anytime to restore your data.</div>
+        </div>
+      </div>
+      <div class="option-meta">
+        <span class="meta-tag free">Free</span>
+        <span class="meta-tag easy">Zero Setup</span>
+        <span class="meta-tag local">Manual Restore</span>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Enable Auto Excel Backup on Save</div>
+          <div class="toggle-sub">Downloads an .xlsx file each time you add or import deals</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="autoExcelToggle" onchange="toggleAutoExcel()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-outline" onclick="exportBackup()">📥 Download Backup Now</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUMMARY -->
+  <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.15);border-radius:10px;padding:16px 20px;font-size:13px;line-height:1.8;color:var(--text2)">
+    <div style="color:var(--gold);font-weight:600;margin-bottom:6px">💡 Recommendation for GitHub Pages</div>
+    <strong style="color:var(--text)">Best combo:</strong> Enable <span style="color:var(--teal)">JSONBin.io</span> for cloud sync + <span style="color:var(--gold)">Auto Excel Backup</span> for an offline safety copy.<br>
+    This way your data is always safe — even if you clear the browser or switch devices.
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="storage.js"></script>
+<script>
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
+function loadCurrentSettings() {
+  const s = getSettings();
+  const data = Local.load() || [];
+
+  // Status panel
+  document.getElementById('localStatus').textContent = `Active — ${data.length} deals`;
+
+  if (s.jsonbinApiKey && s.jsonbinBinId) {
+    document.getElementById('jsonbinDot').style.background = 'var(--teal)';
+    document.getElementById('jsonbinStatus').textContent = 'Connected';
+    document.getElementById('jsonbinStatus').style.color = 'var(--teal)';
+    document.getElementById('jsonbinApiKey').value = s.jsonbinApiKey;
+    document.getElementById('jsonbinBinId').value = s.jsonbinBinId;
+    document.getElementById('binIdGroup').style.display = '';
+    document.getElementById('card-jsonbin').classList.add('active-option');
+  }
+
+  if (s.gsheetsUrl) {
+    document.getElementById('gsheetsDot').style.background = 'var(--blue)';
+    document.getElementById('gsheetsStatus').textContent = 'Connected';
+    document.getElementById('gsheetsStatus').style.color = 'var(--blue)';
+    document.getElementById('gsheetsUrl').value = s.gsheetsUrl;
+    document.getElementById('card-gsheets').classList.add('active-option');
+  }
+
+  const autoOn = !!s.autoExcelBackup;
+  document.getElementById('autoExcelToggle').checked = autoOn;
+  if (autoOn) {
+    document.getElementById('autoDot').style.background = 'var(--gold)';
+    document.getElementById('autoStatus').textContent = 'Enabled';
+    document.getElementById('autoStatus').style.color = 'var(--gold)';
+    document.getElementById('card-excel').classList.add('active-option');
+  }
+
+  if (data.length > 0) document.getElementById('card-local').classList.add('active-option');
+}
+
+async function createBin() {
+  const key = document.getElementById('jsonbinApiKey').value.trim();
+  if (!key) { toast('Enter your API Master Key first', 'error'); return; }
+  toast('Creating bin...', 'warn');
+
+  try {
+    const r = await fetch(`${JSONBIN_BASE}/b`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'OxyLoans Portfolio', 'X-Bin-Private': 'true' },
+      body: JSON.stringify({ data: [], savedAt: new Date().toISOString() })
+    });
+    if (!r.ok) { const e=await r.json(); toast('JSONBin error: '+(e.message||r.status), 'error'); return; }
+    const json = await r.json();
+    const binId = json?.metadata?.id;
+    if (!binId) { toast('Could not get Bin ID', 'error'); return; }
+    document.getElementById('jsonbinBinId').value = binId;
+    document.getElementById('binIdGroup').style.display = '';
+    toast('Bin created! ID: ' + binId, 'success');
+  } catch (e) { toast('Failed: ' + e.message, 'error'); }
+}
+
+async function saveJsonBin() {
+  const key   = document.getElementById('jsonbinApiKey').value.trim();
+  const binId = document.getElementById('jsonbinBinId').value.trim();
+  if (!key)   { toast('Enter API Key', 'error'); return; }
+  if (!binId) { toast('Create a bin first or enter Bin ID', 'error'); return; }
+
+  // Test connection
+  toast('Testing connection...', 'warn');
+  try {
+    const r = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    if (!r.ok) { toast('Connection failed — check your key & bin ID', 'error'); return; }
+  } catch (e) { toast('Connection error: ' + e.message, 'error'); return; }
+
+  const s = getSettings();
+  saveSettings({ ...s, jsonbinApiKey: key, jsonbinBinId: binId });
+
+  // Push current local data to cloud
+  const data = Local.load() || [];
+  await JsonBin.save(data);
+
+  toast('JSONBin connected & data synced! ☁️', 'success');
+  loadCurrentSettings();
+}
+
+function clearJsonBin() {
+  const s = getSettings();
+  delete s.jsonbinApiKey; delete s.jsonbinBinId;
+  saveSettings(s);
+  document.getElementById('jsonbinApiKey').value = '';
+  document.getElementById('jsonbinBinId').value = '';
+  document.getElementById('binIdGroup').style.display = 'none';
+  document.getElementById('card-jsonbin').classList.remove('active-option');
+  toast('JSONBin disconnected', 'warn');
+  loadCurrentSettings();
+}
+
+async function testGSheets() {
+  const url = document.getElementById('gsheetsUrl').value.trim();
+  if (!url) { toast('Enter the Web App URL', 'error'); return; }
+  toast('Testing...', 'warn');
+  try {
+    const r = await fetch(url + '?action=load&t=' + Date.now());
+    if (!r.ok) { toast('Connection failed — check URL & deployment', 'error'); return; }
+    const j = await r.json();
+    toast('Google Sheets connected! Found ' + (j?.data?.length || 0) + ' rows', 'success');
+  } catch (e) { toast('Test failed: ' + e.message + ' (check CORS / deployment)', 'error'); }
+}
+
+async function saveGSheets() {
+  const url = document.getElementById('gsheetsUrl').value.trim();
+  if (!url) { toast('Enter the Web App URL', 'error'); return; }
+  const s = getSettings();
+  saveSettings({ ...s, gsheetsUrl: url });
+
+  // Push local data to GSheets
+  const data = Local.load() || [];
+  await GSheets.save(data);
+  toast('Google Sheets connected & data pushed! 📊', 'success');
+  loadCurrentSettings();
+}
+
+function clearGSheets() {
+  const s = getSettings();
+  delete s.gsheetsUrl;
+  saveSettings(s);
+  document.getElementById('gsheetsUrl').value = '';
+  document.getElementById('card-gsheets').classList.remove('active-option');
+  toast('Google Sheets disconnected', 'warn');
+  loadCurrentSettings();
+}
+
+function toggleAutoExcel() {
+  const on = document.getElementById('autoExcelToggle').checked;
+  const s = getSettings();
+  saveSettings({ ...s, autoExcelBackup: on });
+  toast(on ? 'Auto Excel backup enabled' : 'Auto Excel backup disabled', on ? 'success' : 'warn');
+  loadCurrentSettings();
+}
+
+function exportBackup() {
+  const data = Local.load() || [];
+  if (!data.length) { toast('No data to backup', 'error'); return; }
+  ExcelBackup.download(data);
+  toast('Backup downloaded', 'success');
+}
+
+function copyCode() {
+  const code = document.getElementById('appsScriptCode').innerText.replace('Copy','').trim();
+  navigator.clipboard.writeText(code).then(()=>toast('Code copied!','success'));
+}
+
+function toast(msg, type='success') {
+  const t=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className=`toast-msg ${type}`;
+  el.innerHTML=`${type==='success'?'✅':type==='error'?'❌':'⚠️'} ${msg}`;
+  t.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},4000);
+}
+
+loadCurrentSettings();
+</script>
+</body>
+</html>

@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OxyLoans — Deep Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060d1c;--bg2:#0c1628;--bg3:#111f35;--card:rgba(13,27,52,0.85);--gold:#c9a84c;--gold2:#e8c96a;--teal:#00c9a7;--red:#ff6b6b;--blue:#4c9be8;--purple:#9b6bc9;--text:#dde8f0;--text2:#7a91aa;--border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.07);--shadow:0 8px 32px rgba(0,0,0,0.5);--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(0,100,200,0.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,76,0.06),transparent 60%);pointer-events:none;z-index:0}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:#060d1c}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 16px;border-radius:8px;font-size:13px;color:var(--text2);text-decoration:none;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{color:var(--gold);background:rgba(201,168,76,0.1)}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;font-family:'DM Sans',sans-serif}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;font-weight:600}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,0.3)}
+
+main{position:relative;z-index:1;padding:32px;max-width:1800px;margin:0 auto}
+
+.page-header{margin-bottom:28px;animation:fadeUp 0.5s ease}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700}
+.page-title span{color:var(--gold)}
+.page-subtitle{color:var(--text2);font-size:14px;margin-top:4px}
+
+/* INSIGHTS STRIP */
+.insights-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:24px;animation:fadeUp 0.5s ease 0.1s both}
+.insight-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:16px;backdrop-filter:blur(10px);transition:all 0.25s;cursor:default;position:relative;overflow:hidden}
+.insight-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:0;transition:0.3s}
+.insight-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.insight-card:hover::before{opacity:1}
+.insight-card.blue::before{background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.insight-card.teal::before{background:linear-gradient(90deg,transparent,var(--teal),transparent)}
+.insight-card.red::before{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.insight-card.purple::before{background:linear-gradient(90deg,transparent,var(--purple),transparent)}
+.ins-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ins-value{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;margin-bottom:4px}
+.ins-desc{font-size:12px;color:var(--text2)}
+.ins-trend{font-size:12px;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:3px}
+.ins-trend.up{background:rgba(0,201,167,0.15);color:var(--teal)}
+.ins-trend.down{background:rgba(255,107,107,0.15);color:var(--red)}
+.ins-trend.flat{background:rgba(201,168,76,0.15);color:var(--gold)}
+
+/* SECTION */
+.section{margin-bottom:24px}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:12px;color:var(--text);animation:fadeUp 0.5s ease both}
+.section-title .line{flex:1;height:1px;background:var(--border2)}
+
+/* CHART GRIDS */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-1{display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:16px}
+
+.chart-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:20px;backdrop-filter:blur(10px);position:relative;animation:fadeUp 0.5s ease both}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:600;color:var(--text)}
+.chart-subtitle{font-size:12px;color:var(--text2);margin-top:2px}
+.chart-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;background:rgba(201,168,76,0.12);color:var(--gold);border:1px solid var(--border)}
+
+/* DEAL PERFORMANCE TABLE */
+.perf-table{width:100%;border-collapse:collapse;font-size:12px}
+.perf-table thead th{background:rgba(201,168,76,0.06);padding:10px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.perf-table tbody tr{border-bottom:1px solid var(--border2);transition:background 0.15s}
+.perf-table tbody tr:hover{background:rgba(255,255,255,0.025)}
+.perf-table tbody td{padding:10px 14px;color:var(--text);white-space:nowrap}
+.progress-mini{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;width:80px}
+.progress-mini-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+.badge{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.open{background:rgba(0,201,167,0.15);color:var(--teal)}
+.badge.closed{background:rgba(255,107,107,0.15);color:var(--red)}
+.badge.active{background:rgba(201,168,76,0.15);color:var(--gold)}
+.badge.matured{background:rgba(120,130,160,0.15);color:var(--text2)}
+.badge.pending{background:rgba(76,155,232,0.15);color:var(--blue)}
+
+/* MATURITY TIMELINE */
+.timeline-wrap{padding:8px 0}
+.timeline-deal{display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:12px}
+.tl-name{width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);flex-shrink:0}
+.tl-bar-bg{flex:1;height:20px;background:var(--bg3);border-radius:4px;position:relative;overflow:hidden}
+.tl-bar-fill{height:100%;border-radius:4px;position:absolute;top:0;display:flex;align-items:center;padding:0 8px;font-size:10px;font-weight:600;white-space:nowrap;transition:width 1s ease}
+.tl-days{width:60px;text-align:right;flex-shrink:0}
+
+/* HEATMAP */
+.heatmap-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px}
+.hm-cell{aspect-ratio:1;border-radius:2px;cursor:pointer;position:relative}
+.hm-cell:hover::after{content:attr(data-tip);position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:11px;color:var(--text);white-space:nowrap;z-index:10}
+.hm-labels{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-bottom:4px}
+.hm-label{font-size:9px;color:var(--text2);text-align:center}
+
+/* AI INSIGHT BOX */
+.ai-insight{background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(0,201,167,0.05));border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:16px;animation:fadeUp 0.5s ease both}
+.ai-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ai-icon{font-size:18px}
+.ai-title{font-size:13px;font-weight:600;color:var(--gold)}
+.ai-items{display:flex;flex-direction:column;gap:8px}
+.ai-item{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5}
+.ai-item .dot{width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;margin-top:6px}
+.ai-item.green .dot{background:var(--teal)}
+.ai-item.red .dot{background:var(--red)}
+.ai-item.blue .dot{background:var(--blue)}
+
+/* USER BREAKDOWN */
+.user-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:16px}
+.user-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:18px;backdrop-filter:blur(10px)}
+.user-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--blue));display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:18px;color:#060d1c;margin-bottom:10px}
+.user-name{font-weight:600;font-size:15px;margin-bottom:4px;color:var(--text)}
+.user-stats{font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:3px}
+.user-stats span{display:flex;justify-content:space-between}
+.user-stats strong{color:var(--gold)}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:80px 20px;color:var(--text2)}
+.empty-state .icon{font-size:56px;margin-bottom:16px;opacity:0.4}
+.empty-state h3{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--text);margin-bottom:8px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo">O</div>
+    <div class="nav-title">OxyLoans Portfolio</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📊 Dashboard</a>
+    <a class="nav-link" href="upload.html">📤 Upload Excel</a>
+    <a class="nav-link" href="manual-entry.html">✏️ Manual Entry</a>
+    <a class="nav-link active" href="analytics.html">🔬 Deep Analysis</a>
+    <a class="nav-link" href="storage-setup.html">⚙️ Storage</a>
+  </div>
+  <button class="btn btn-gold" onclick="window.location='index.html'">← Dashboard</button>
+</nav>
+
+<main id="mainContent">
+  <div class="page-header">
+    <div class="page-title">🔬 Deep <span>Analysis</span></div>
+    <div class="page-subtitle">Portfolio intelligence, performance metrics & predictive insights</div>
+  </div>
+
+  <div id="emptyState" style="display:none" class="empty-state">
+    <div class="icon">📊</div>
+    <h3>No Data Available</h3>
+    <p style="margin-bottom:20px">Please upload an Excel file or add deals manually first.</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-gold" onclick="window.location='upload.html'">📤 Upload Excel</button>
+      <button class="btn btn-outline" onclick="window.location='manual-entry.html'">✏️ Enter Manually</button>
+    </div>
+  </div>
+
+  <div id="analyticsContent">
+    <!-- SMART INSIGHTS -->
+    <div class="ai-insight">
+      <div class="ai-header"><span class="ai-icon">💡</span><span class="ai-title">Portfolio Intelligence — Key Insights</span></div>
+      <div class="ai-items" id="aiInsights"></div>
+    </div>
+
+    <!-- METRIC STRIP -->
+    <div class="insights-strip" id="insightsStrip"></div>
+
+    <!-- SECTION 1: COLLECTION & IR ANALYSIS -->
+    <div class="section-title fade-up">📈 Collection & Interest Analysis <div class="line"></div></div>
+    <div class="grid-2">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Cumulative Interest Collection</div><div class="chart-subtitle">Received vs Expected over time</div></div>
+          <span class="chart-badge">Cumulative</span>
+        </div>
+        <div style="height:260px"><canvas id="chartCumulative"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">IR Collection Rate by Deal</div><div class="chart-subtitle">% of expected interest received</div></div>
+          <span class="chart-badge">Efficiency</span>
+        </div>
+        <div style="height:260px"><canvas id="chartCollectionRate"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: PORTFOLIO COMPOSITION -->
+    <div class="section-title fade-up">🎯 Portfolio Composition <div class="line"></div></div>
+    <div class="grid-3">
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Capital by Status</div></div>
+        <div style="height:220px"><canvas id="chartCapitalStatus"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">ROI Distribution</div></div>
+        <div style="height:220px"><canvas id="chartRoiDist"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header"><div class="chart-title">Deal Duration Mix</div></div>
+        <div style="height:220px"><canvas id="chartDuration"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: MATURITY TIMELINE -->
+    <div class="section-title fade-up">⏳ Deal Maturity Timeline <div class="line"></div></div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-header">
+        <div><div class="chart-title">Days Remaining per Deal</div><div class="chart-subtitle">Green = >60d | Gold = &lt;60d | Red = Expired</div></div>
+      </div>
+      <div class="timeline-wrap" id="timelineWrap"></div>
+    </div>
+
+    <!-- SECTION 4: MONTHLY IR HEATMAP -->
+    <div class="section-title fade-up">🗓 Monthly IR Heatmap <div class="line"></div></div>
+    <div class="chart-card" style="margin-bottom:16px">
+      <div class="chart-header"><div class="chart-title">Monthly Interest by Deal (₹ Intensity)</div></div>
+      <div id="heatmapWrap"></div>
+    </div>
+
+    <!-- SECTION 5: INVESTMENT vs IR SCATTER -->
+    <div class="section-title fade-up">🔍 Investment Intelligence <div class="line"></div></div>
+    <div class="grid-2">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Amount vs ROI Scatter</div><div class="chart-subtitle">Bubble size = Total interest expected</div></div>
+        </div>
+        <div style="height:260px"><canvas id="chartScatter"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Monthly IR Trend per User</div></div>
+        </div>
+        <div style="height:260px"><canvas id="chartUserTrend"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SECTION 6: USER BREAKDOWN -->
+    <div class="section-title fade-up">👥 Investor Breakdown <div class="line"></div></div>
+    <div class="user-cards" id="userCards"></div>
+
+    <!-- SECTION 7: DEAL PERFORMANCE TABLE -->
+    <div class="section-title fade-up">📋 Deal Performance Scorecard <div class="line"></div></div>
+    <div class="chart-card" style="margin-bottom:24px;padding:0">
+      <div style="overflow-x:auto">
+        <table class="perf-table">
+          <thead>
+            <tr>
+              <th>Deal</th><th>Invested</th><th>ROI</th><th>Monthly IR</th>
+              <th>Received</th><th>Expected</th><th>Collection %</th>
+              <th>Balance IR</th><th>Days Left</th><th>Status</th><th>Score</th>
+            </tr>
+          </thead>
+          <tbody id="perfTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = 'oxyloans_portfolio';
+let data = [];
+let charts = {};
+
+Chart.defaults.color = '#7a91aa';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+Chart.defaults.plugins.tooltip.backgroundColor = '#0c1628';
+Chart.defaults.plugins.tooltip.borderColor = 'rgba(201,168,76,0.3)';
+Chart.defaults.plugins.tooltip.borderWidth = 1;
+Chart.defaults.plugins.tooltip.titleColor = '#dde8f0';
+Chart.defaults.plugins.tooltip.bodyColor = '#7a91aa';
+Chart.defaults.plugins.tooltip.padding = 10;
+
+const PALETTE = ['#c9a84c','#00c9a7','#ff6b6b','#4c9be8','#9b6bc9','#6bc9c9','#c9c96b','#ff9f6b'];
+
+function fmt(n) {
+  if(!n&&n!==0)return'—';
+  if(Math.abs(n)>=1e7)return'₹'+(n/1e7).toFixed(2)+'Cr';
+  if(Math.abs(n)>=1e5)return'₹'+(n/1e5).toFixed(1)+'L';
+  return'₹'+n.toLocaleString('en-IN');
+}
+
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function buildInsights(d) {
+  const totalInv = d.reduce((a,b)=>a+(+b.participatedAmount||0),0);
+  const totalRec = d.reduce((a,b)=>a+(+b.interestReceived||0),0);
+  const totalExp = d.reduce((a,b)=>a+(+b.totalInterestToReceive||0),0);
+  const totalBal = d.reduce((a,b)=>a+(+b.balanceIRFromOxy||0),0);
+  const avgRoi   = d.length?(d.reduce((a,b)=>a+(+b.roi||0),0)/d.length).toFixed(1):0;
+  const open     = d.filter(x=>x.dealOpenClosed==='Open').length;
+  const expiring = d.filter(x=>(+x.daysToEnd||999)>=0&&(+x.daysToEnd||999)<60).length;
+  const collRate = totalExp?(totalRec/totalExp*100).toFixed(1):0;
+  const maxRoi   = Math.max(...d.map(x=>+x.roi||0));
+  const bestDeal = d.find(x=>(+x.roi||0)===maxRoi);
+
+  // Metric strip
+  const strip = document.getElementById('insightsStrip');
+  strip.innerHTML = [
+    {label:'Collection Rate',value:collRate+'%',desc:'Interest collected',color:'teal',trend:{type:collRate>70?'up':'flat',text:collRate>70?'Healthy':'Needs attention'}},
+    {label:'Capital at Work',value:fmt(d.filter(x=>x.dealOpenClosed==='Open').reduce((a,b)=>a+(+b.participatedAmount||0),0)),desc:`${open} open deals`,color:'',trend:{type:'flat',text:open+' active'}},
+    {label:'Pending from Oxy',value:fmt(totalBal),desc:'Balance IR due',color:'red',trend:{type:'down',text:'Awaited'}},
+    {label:'Best ROI Deal',value:maxRoi+'%',desc:bestDeal?.dealName?.substring(0,20)||'—',color:'blue',trend:{type:'up',text:'Top performer'}},
+    {label:'Expiring Soon',value:expiring,desc:'Deals ending <60d',color:'purple',trend:{type:expiring>2?'down':'flat',text:expiring>2?'Watch closely':'Under control'}},
+  ].map(i=>`<div class="insight-card ${i.color}">
+    <div class="ins-label">${i.label}</div>
+    <div class="ins-value" style="color:var(--${i.color||'text'})">${i.value}</div>
+    <div class="ins-desc">${i.desc}</div>
+    <div class="ins-trend ${i.trend.type}" style="margin-top:8px">${i.trend.type==='up'?'↑':i.trend.type==='down'?'↓':'→'} ${i.trend.text}</div>
+  </div>`).join('');
+
+  // AI Insights text
+  const insights = [];
+  if(collRate > 75) insights.push({type:'green',text:`Strong collection rate of ${collRate}% indicates healthy cash flows from your portfolio.`});
+  else insights.push({type:'red',text:`Collection rate is ${collRate}% — consider following up on pending interest from Oxy deals.`});
+  if(expiring > 0) insights.push({type:'flat',text:`${expiring} deal(s) are maturing within 60 days. Review renewal options or withdrawal plans.`});
+  if(totalBal > totalInv * 0.05) insights.push({type:'blue',text:`Balance IR of ${fmt(totalBal)} is outstanding from Oxyloans — totalling ${(totalBal/totalInv*100).toFixed(1)}% of invested capital.`});
+  insights.push({type:'green',text:`Average ROI of ${avgRoi}% across ${d.length} deals. Best performer: ${bestDeal?.dealName||'—'} at ${maxRoi}% ROI.`});
+
+  document.getElementById('aiInsights').innerHTML = insights.map(i=>`
+    <div class="ai-item ${i.type}"><div class="dot"></div><span>${i.text}</span></div>`).join('');
+}
+
+function buildCharts(d) {
+  // Chart 1: Cumulative line
+  dc('cumulative');
+  const sorted = [...d].sort((a,b)=>new Date(a.irStartDate||0)-new Date(b.irStartDate||0));
+  let cumRec=0,cumExp=0;
+  const cumLabels=[],cumR=[],cumE=[];
+  sorted.forEach(x=>{cumRec+=(+x.interestReceived||0);cumExp+=(+x.totalInterestToReceive||0);cumLabels.push(x.dealName?.substring(0,12)||x.dealId);cumR.push(cumRec);cumE.push(cumExp);});
+  charts.cumulative = new Chart(document.getElementById('chartCumulative'),{
+    type:'line',data:{labels:cumLabels,datasets:[
+      {label:'Received',data:cumR,borderColor:'#00c9a7',backgroundColor:'rgba(0,201,167,0.08)',fill:true,tension:0.4,pointRadius:4},
+      {label:'Expected',data:cumE,borderColor:'#c9a84c',backgroundColor:'rgba(201,168,76,0.05)',fill:true,tension:0.4,borderDash:[6,3],pointRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a91aa',boxWidth:10}}},scales:{x:{ticks:{color:'#7a91aa',font:{size:10}},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#7a91aa',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.06)'}}}}
+  });
+
+  // Chart 2: Collection rate horizontal bars
+  dc('collectionRate');
+  const collData = d.map(x=>({
+    name:x.dealName?.substring(0,18)||x.dealId,
+    rate:x.totalInterestToReceive>0?Math.min(100,Math.round(x.interestReceived/x.totalInterestToReceive*100)):0
+  })).sort((a,b)=>b.rate-a.rate);
+  charts.collectionRate = new Chart(document.getElementById('chartCollectionRate'),{
+    type:'bar',data:{labels:collData.map(x=>x.name),datasets:[{data:collData.map(x=>x.rate),backgroundColor:collData.map(x=>x.rate>=80?'#00c9a7':x.rate>=50?'#c9a84c':'#ff6b6b'),borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+'%'}}},scales:{x:{max:100,ticks:{color:'#7a91aa',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#7a91aa',font:{size:10}},grid:{display:false}}}}
+  });
+
+  // Chart 3: Capital by status donut
+  dc('capitalStatus');
+  const byStatus={};
+  d.forEach(x=>{const s=x.dealStatus||'Unknown';byStatus[s]=(byStatus[s]||0)+(+x.participatedAmount||0);});
+  charts.capitalStatus = new Chart(document.getElementById('chartCapitalStatus'),{
+    type:'doughnut',data:{labels:Object.keys(byStatus),datasets:[{data:Object.values(byStatus),backgroundColor:['#c9a84c','#00c9a7','#ff6b6b','#4c9be8'],borderWidth:2,borderColor:'#0c1628',hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:'#7a91aa',boxWidth:10,font:{size:11}}},tooltip:{callbacks:{label:c=>fmt(c.raw)}}}}
+  });
+
+  // Chart 4: ROI distribution
+  dc('roiDist');
+  const roiBuckets={'<9%':0,'9-10%':0,'10-11%':0,'11-12%':0,'>12%':0};
+  d.forEach(x=>{const r=+x.roi||0;if(r<9)roiBuckets['<9%']++;else if(r<10)roiBuckets['9-10%']++;else if(r<11)roiBuckets['10-11%']++;else if(r<12)roiBuckets['11-12%']++;else roiBuckets['>12%']++;});
+  charts.roiDist = new Chart(document.getElementById('chartRoiDist'),{
+    type:'bar',data:{labels:Object.keys(roiBuckets),datasets:[{data:Object.values(roiBuckets),backgroundColor:['#ff6b6b','#ff9f6b','#c9a84c','#6bc9c9','#00c9a7'],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7a91aa'},grid:{display:false}},y:{ticks:{color:'#7a91aa'},grid:{color:'rgba(255,255,255,0.06)'}}}}
+  });
+
+  // Chart 5: Duration mix
+  dc('duration');
+  const durBuckets={'<6 mo':0,'6-12 mo':0,'12-18 mo':0,'18-24 mo':0,'>24 mo':0};
+  d.forEach(x=>{const m=+x.months||0;if(m<6)durBuckets['<6 mo']++;else if(m<12)durBuckets['6-12 mo']++;else if(m<18)durBuckets['12-18 mo']++;else if(m<24)durBuckets['18-24 mo']++;else durBuckets['>24 mo']++;});
+  charts.duration = new Chart(document.getElementById('chartDuration'),{
+    type:'polarArea',data:{labels:Object.keys(durBuckets),datasets:[{data:Object.values(durBuckets),backgroundColor:PALETTE.map(c=>c+'bb'),borderWidth:1,borderColor:PALETTE}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#7a91aa',boxWidth:10,font:{size:11}}}},scales:{r:{ticks:{color:'#7a91aa',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.06)'}}}}
+  });
+
+  // Chart 6: Scatter
+  dc('scatter');
+  const scatterData = d.map(x=>({x:+x.participatedAmount||0,y:+x.roi||0,r:Math.max(6,Math.min(24,(+x.totalInterestToReceive||0)/10000)),label:x.dealName?.substring(0,12)||x.dealId}));
+  charts.scatter = new Chart(document.getElementById('chartScatter'),{
+    type:'bubble',data:{datasets:[{label:'Deals',data:scatterData,backgroundColor:PALETTE.map(c=>c+'99'),borderWidth:1,borderColor:PALETTE}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw.label||''} | ₹${c.raw.x.toLocaleString('en-IN')} @ ${c.raw.y}%`}}},scales:{x:{ticks:{color:'#7a91aa',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.06)'},title:{display:true,text:'Investment Amount',color:'#7a91aa'}},y:{ticks:{color:'#7a91aa',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,0.06)'},title:{display:true,text:'ROI %',color:'#7a91aa'}}}}
+  });
+
+  // Chart 7: User IR trend
+  dc('userTrend');
+  const users=[...new Set(d.map(x=>x.name).filter(Boolean))];
+  const userDatasets = users.map((u,i)=>{
+    const userDeals = d.filter(x=>x.name===u);
+    return {label:u,data:userDeals.map(x=>+x.monthlyIR||0),borderColor:PALETTE[i%PALETTE.length],backgroundColor:PALETTE[i%PALETTE.length]+'22',fill:false,tension:0.4,pointRadius:5};
+  });
+  charts.userTrend = new Chart(document.getElementById('chartUserTrend'),{
+    type:'line',data:{labels:d.map(x=>x.dealName?.substring(0,12)||x.dealId),datasets:userDatasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7a91aa',boxWidth:10,font:{size:11}}}},scales:{x:{ticks:{color:'#7a91aa',font:{size:10}},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#7a91aa',callback:v=>fmt(v)},grid:{color:'rgba(255,255,255,0.06)'}}}}
+  });
+}
+
+function buildTimeline(d) {
+  const sorted = [...d].sort((a,b)=>(+a.daysToEnd||9999)-(+b.daysToEnd||9999));
+  const maxDays = Math.max(...sorted.map(x=>Math.abs(+x.daysToEnd||0)),1);
+
+  document.getElementById('timelineWrap').innerHTML = sorted.map(x=>{
+    const days = +x.daysToEnd||0;
+    const pct = Math.min(100,(Math.abs(days)/maxDays)*100);
+    const color = days<0?'var(--red)':days<60?'var(--gold)':'var(--teal)';
+    const label = days<0?`Expired ${Math.abs(days)}d ago`:days===0?'Today':`${days}d left`;
+    return `<div class="timeline-deal">
+      <div class="tl-name">${x.dealName||x.dealId}</div>
+      <div class="tl-bar-bg">
+        <div class="tl-bar-fill" style="width:${pct}%;background:${color};color:#060d1c">${label}</div>
+      </div>
+      <div class="tl-days" style="color:${color};font-size:11px">${fmt(x.participatedAmount)}</div>
+    </div>`;
+  }).join('');
+}
+
+function buildHeatmap(d) {
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const allIR = d.map(x=>+x.monthlyIR||0);
+  const maxIR = Math.max(...allIR,1);
+  const minIR = Math.min(...allIR.filter(v=>v>0),0);
+
+  const wrap = document.getElementById('heatmapWrap');
+  wrap.innerHTML = `<div class="hm-labels">${MONTHS.map(m=>`<div class="hm-label">${m}</div>`).join('')}</div>
+  <div class="heatmap-grid" id="heatmapGrid"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:11px;color:var(--text2)">
+    <div style="width:12px;height:12px;border-radius:2px;background:var(--bg3)"></div>Low
+    <div style="width:12px;height:12px;border-radius:2px;background:rgba(201,168,76,0.5);margin-left:8px"></div>Medium
+    <div style="width:12px;height:12px;border-radius:2px;background:var(--teal);margin-left:8px"></div>High
+  </div>`;
+
+  const grid = document.getElementById('heatmapGrid');
+  // Create 12 * n cells (months × up to 8 deals)
+  const topDeals = d.slice(0,8);
+  grid.style.gridTemplateColumns = `repeat(12,1fr)`;
+
+  // Flatten: for each month, sum monthly IR of all deals started in/before that month
+  const monthData = MONTHS.map((m,i)=>{
+    const mo = String(i+1).padStart(2,'0');
+    const total = d.filter(x=>{
+      const start=(x.irStartDate||'').substring(5,7);
+      const end=(x.irEndDate||'').substring(5,7);
+      return start<=mo&&(end>=mo||!x.irEndDate);
+    }).reduce((a,b)=>a+(+b.monthlyIR||0),0);
+    return total;
+  });
+
+  const maxVal = Math.max(...monthData,1);
+  grid.innerHTML = monthData.map((val,i)=>{
+    const intensity = val/maxVal;
+    const r=Math.round(intensity*100);
+    const g=Math.round(intensity>0.5?(intensity*1.5*100):50);
+    const bg = val===0?'var(--bg3)':`rgba(${Math.round(201*(1-intensity)+76*intensity)},${Math.round(168*(1-intensity)+201*intensity)},${Math.round(76*(1-intensity)+107*intensity)},${0.3+intensity*0.7})`;
+    return `<div class="hm-cell" style="background:${bg}" data-tip="${MONTHS[i]}: ${fmt(val)}"></div>`;
+  }).join('');
+}
+
+function buildUserCards(d) {
+  const users = [...new Set(d.map(x=>x.name).filter(Boolean))];
+  document.getElementById('userCards').innerHTML = users.map(u=>{
+    const ud = d.filter(x=>x.name===u);
+    const totalInv = ud.reduce((a,b)=>a+(+b.participatedAmount||0),0);
+    const totalRec = ud.reduce((a,b)=>a+(+b.interestReceived||0),0);
+    const totalExp = ud.reduce((a,b)=>a+(+b.totalInterestToReceive||0),0);
+    const avgRoi = ud.length?(ud.reduce((a,b)=>a+(+b.roi||0),0)/ud.length).toFixed(1):0;
+    const open = ud.filter(x=>x.dealOpenClosed==='Open').length;
+    return `<div class="user-card">
+      <div class="user-avatar">${u.charAt(0).toUpperCase()}</div>
+      <div class="user-name">${u}</div>
+      <div class="user-stats">
+        <span>Total Invested <strong>${fmt(totalInv)}</strong></span>
+        <span>IR Received <strong>${fmt(totalRec)}</strong></span>
+        <span>Total Expected <strong>${fmt(totalExp)}</strong></span>
+        <span>Avg ROI <strong>${avgRoi}%</strong></span>
+        <span>Open Deals <strong>${open}</strong></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildPerfTable(d) {
+  function score(deal) {
+    let s=0;
+    const colRate=(+deal.interestReceived||0)/(+deal.totalInterestToReceive||1)*100;
+    if(colRate>=80)s+=35;else if(colRate>=50)s+=20;else s+=5;
+    if((+deal.roi||0)>=12)s+=30;else if((+deal.roi||0)>=10)s+=20;else s+=10;
+    if((+deal.daysToEnd||0)>60)s+=20;else if((+deal.daysToEnd||0)>=0)s+=10;else s+=5;
+    if(deal.dealOpenClosed==='Open')s+=15;
+    return s;
+  }
+
+  const sorted=[...d].sort((a,b)=>score(b)-score(a));
+  document.getElementById('perfTableBody').innerHTML = sorted.map(x=>{
+    const colRate=x.totalInterestToReceive>0?Math.round(x.interestReceived/x.totalInterestToReceive*100):0;
+    const s=score(x);
+    const scoreColor=s>=80?'var(--teal)':s>=60?'var(--gold)':'var(--red)';
+    return `<tr>
+      <td style="color:var(--gold);font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis">${x.dealName||'—'}</td>
+      <td>${fmt(x.participatedAmount)}</td>
+      <td style="color:${(+x.roi||0)>=12?'var(--teal)':'var(--gold)'}">${x.roi||0}%</td>
+      <td>${fmt(x.monthlyIR)}</td>
+      <td style="color:var(--teal)">${fmt(x.interestReceived)}</td>
+      <td>${fmt(x.totalInterestToReceive)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-mini"><div class="progress-mini-fill" style="width:${colRate}%;background:${colRate>=80?'var(--teal)':colRate>=50?'var(--gold)':'var(--red)'}"></div></div>
+          <span style="font-size:11px;color:${colRate>=80?'var(--teal)':colRate>=50?'var(--gold)':'var(--red)'}">${colRate}%</span>
+        </div>
+      </td>
+      <td style="color:${(+x.balanceIRFromOxy||0)>0?'var(--red)':'var(--teal)'}">${fmt(x.balanceIRFromOxy)}</td>
+      <td style="color:${(+x.daysToEnd||0)<0?'var(--red)':(+x.daysToEnd||0)<60?'var(--gold)':'var(--teal)'}">${x.daysToEnd!=null?x.daysToEnd+'d':'—'}</td>
+      <td><span class="badge ${(x.dealOpenClosed||'').toLowerCase()}">${x.dealOpenClosed||'—'}</span></td>
+      <td>
+        <span style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:${scoreColor}">${s}</span>
+        <span style="font-size:10px;color:var(--text2)">/100</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function init() {
+  try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { data=[]; }
+
+  const hasData = data.length > 0;
+  document.getElementById('analyticsContent').style.display = hasData ? 'block' : 'none';
+  document.getElementById('emptyState').style.display = hasData ? 'none' : 'block';
+
+  if(hasData) {
+    buildInsights(data);
+    buildCharts(data);
+    buildTimeline(data);
+    buildHeatmap(data);
+    buildUserCards(data);
+    buildPerfTable(data);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

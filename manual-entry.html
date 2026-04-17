@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OxyLoans — Manual Entry</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060d1c;--bg2:#0c1628;--bg3:#111f35;--card:rgba(13,27,52,0.85);--gold:#c9a84c;--gold2:#e8c96a;--teal:#00c9a7;--red:#ff6b6b;--text:#dde8f0;--text2:#7a91aa;--border:rgba(201,168,76,0.18);--border2:rgba(255,255,255,0.07);--shadow:0 8px 32px rgba(0,0,0,0.5);--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 0%,rgba(0,100,200,0.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(201,168,76,0.06),transparent 60%);pointer-events:none;z-index:0}
+
+nav{position:sticky;top:0;z-index:100;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:20px;color:#060d1c}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--gold)}
+.nav-links{display:flex;gap:4px}
+.nav-link{padding:8px 16px;border-radius:8px;font-size:13px;color:var(--text2);text-decoration:none;transition:all 0.2s}
+.nav-link:hover,.nav-link.active{color:var(--gold);background:rgba(201,168,76,0.1)}
+.btn{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.2s;border:none;font-family:'DM Sans',sans-serif}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text2)}
+.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#060d1c;font-weight:600}
+.btn-gold:hover{transform:translateY(-1px);box-shadow:0 4px 20px rgba(201,168,76,0.3)}
+.btn-red{background:rgba(255,107,107,0.1);color:var(--red);border:1px solid rgba(255,107,107,0.2)}
+.btn-red:hover{background:rgba(255,107,107,0.2)}
+.btn-teal{background:rgba(0,201,167,0.1);color:var(--teal);border:1px solid rgba(0,201,167,0.2)}
+.btn-teal:hover{background:rgba(0,201,167,0.2)}
+
+main{position:relative;z-index:1;padding:32px;max-width:1600px;margin:0 auto}
+
+.page-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:28px;animation:fadeUp 0.5s ease}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700}
+.page-title span{color:var(--gold)}
+
+/* FORM PANEL */
+.form-panel{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:28px;backdrop-filter:blur(10px);margin-bottom:24px;animation:fadeUp 0.5s ease 0.1s both}
+.form-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border2)}
+.panel-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;display:flex;align-items:center;gap:10px}
+.panel-dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.form-section{margin-bottom:24px}
+.form-section-label{font-size:11px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.form-section-label::after{content:'';flex:1;height:1px;background:var(--border2)}
+.form-grid{display:grid;gap:14px}
+.form-grid.cols-3{grid-template-columns:repeat(3,1fr)}
+.form-grid.cols-4{grid-template-columns:repeat(4,1fr)}
+.form-grid.cols-2{grid-template-columns:repeat(2,1fr)}
+.form-grid.cols-6{grid-template-columns:repeat(6,1fr)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px}
+.field label .req{color:var(--red)}
+.field input,.field select,.field textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;transition:all 0.2s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.field input::placeholder{color:var(--text2)}
+.field input.error{border-color:var(--red)}
+.field .err-msg{font-size:11px;color:var(--red);display:none}
+.field.has-error .err-msg{display:block}
+.field.has-error input,.field.has-error select{border-color:var(--red)}
+.field input[type="number"]{-moz-appearance:textfield}
+.field input[type="number"]::-webkit-outer-spin-button,.field input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none}
+.calc-badge{font-size:11px;color:var(--teal);margin-top:2px}
+
+/* LIVE CALC */
+.calc-panel{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:14px 16px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.calc-item{text-align:center}
+.calc-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.calc-value{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold)}
+
+/* TABLE */
+.deals-table-card{background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);overflow:hidden;backdrop-filter:blur(10px);animation:fadeUp 0.5s ease 0.2s both}
+.table-header-row{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border2)}
+.table-scroll{overflow-x:auto;max-height:500px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;z-index:10}
+thead th{background:#0d1f3a;padding:10px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;border-bottom:1px solid var(--border)}
+tbody tr{border-bottom:1px solid var(--border2);transition:background 0.15s}
+tbody tr:hover{background:rgba(255,255,255,0.025)}
+tbody td{padding:9px 12px;color:var(--text);white-space:nowrap}
+.badge{padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.open{background:rgba(0,201,167,0.15);color:var(--teal)}
+.badge.closed{background:rgba(255,107,107,0.15);color:var(--red)}
+.action-cell{display:flex;gap:4px}
+.icon-btn{background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:4px;font-size:14px;transition:all 0.15s}
+.icon-btn:hover{background:var(--bg3)}
+.empty-row{text-align:center;padding:40px;color:var(--text2);font-size:14px}
+
+/* STICKY BAR */
+.sticky-bar{position:sticky;bottom:0;z-index:50;background:rgba(6,13,28,0.95);backdrop-filter:blur(20px);border-top:1px solid var(--border);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;max-width:1600px;margin:0 auto}
+.sticky-info{font-size:13px;color:var(--text2)}
+.sticky-info strong{color:var(--gold)}
+.sticky-actions{display:flex;gap:10px}
+
+/* MODAL OVERLAY */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:16px;width:100%;max-width:680px;box-shadow:0 24px 80px rgba(0,0,0,0.6)}
+.modal-header{padding:24px 24px 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text2);font-size:22px;cursor:pointer;padding:4px;border-radius:6px}
+.modal-body{padding:0 24px 24px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;padding-top:16px;border-top:1px solid var(--border2);margin-top:20px}
+
+/* TOAST */
+#toast{position:fixed;bottom:80px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast-msg{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;color:var(--text);display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);animation:slideIn 0.3s ease;max-width:320px}
+.toast-msg.success{border-left:3px solid var(--teal)}
+.toast-msg.error{border-left:3px solid var(--red)}
+.toast-msg.warn{border-left:3px solid var(--gold)}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-brand" href="index.html">
+    <div class="nav-logo">O</div>
+    <div class="nav-title">OxyLoans Portfolio</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="index.html">📊 Dashboard</a>
+    <a class="nav-link" href="upload.html">📤 Upload Excel</a>
+    <a class="nav-link active" href="manual-entry.html">✏️ Manual Entry</a>
+    <a class="nav-link" href="analytics.html">🔬 Deep Analysis</a>
+    <a class="nav-link" href="storage-setup.html">⚙️ Storage</a>
+  </div>
+  <button class="btn btn-gold" onclick="window.location='index.html'">← Dashboard</button>
+</nav>
+
+<main>
+  <div class="page-header">
+    <div>
+      <div class="page-title">✏️ <span>Manual</span> Deal Entry</div>
+      <div style="font-size:14px;color:var(--text2);margin-top:4px">Add and manage investment deals one by one</div>
+    </div>
+    <button class="btn btn-gold" onclick="openModal()">+ Add New Deal</button>
+  </div>
+
+  <!-- DEALS TABLE -->
+  <div class="deals-table-card">
+    <div class="table-header-row">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600">Deals Register <span id="dealCountBadge" style="font-size:14px;color:var(--text2);font-family:'DM Sans',sans-serif"></span></div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="tableSearch" placeholder="🔍 Search..." oninput="renderDealsTable()" style="background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;width:180px">
+        <button class="btn btn-outline" style="font-size:12px" onclick="exportDeals()">⬇ Export</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Deal ID</th><th>Deal Name</th><th>Amount</th><th>ROI</th><th>Monthly IR</th>
+            <th>IR Received</th><th>Balance IR</th><th>Start Date</th><th>End Date</th>
+            <th>Status</th><th>Open/Closed</th><th>Payout</th><th>User</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="dealsTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- STICKY BAR -->
+<div class="sticky-bar">
+  <div class="sticky-info"><strong id="stickyCount">0 deals</strong> in portfolio</div>
+  <div class="sticky-actions">
+    <button class="btn btn-outline" onclick="clearAll()">🗑 Clear All</button>
+    <button class="btn btn-teal" onclick="window.location='analytics.html'">🔬 Analyse</button>
+    <button class="btn btn-gold" onclick="window.location='index.html'">📊 View Dashboard</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add New Deal</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- LIVE CALC -->
+      <div class="calc-panel" id="calcPanel">
+        <div class="calc-item"><div class="calc-label">Monthly IR</div><div class="calc-value" id="calcMonthlyIR">₹0</div></div>
+        <div class="calc-item"><div class="calc-label">Total Interest</div><div class="calc-value" id="calcTotal">₹0</div></div>
+        <div class="calc-item"><div class="calc-label">Balance IR</div><div class="calc-value" id="calcBalance">₹0</div></div>
+        <div class="calc-item"><div class="calc-label">Days to End</div><div class="calc-value" id="calcDays">—</div></div>
+      </div>
+
+      <!-- SECTION 1: Deal Basics -->
+      <div class="form-section">
+        <div class="form-section-label">📋 Deal Basics</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Deal ID</label><input type="text" id="f_dealId" placeholder="Auto-generated"></div>
+          <div class="field"><label>Deal Name <span class="req">*</span></label><input type="text" id="f_dealName" placeholder="e.g. Real Estate Fund A" oninput="validate('dealName')"><div class="err-msg">Deal name is required</div></div>
+          <div class="field"><label>User Name <span class="req">*</span></label><input type="text" id="f_name" placeholder="Investor name" oninput="validate('name')"><div class="err-msg">Name is required</div></div>
+          <div class="field"><label>Deal User ID</label><input type="text" id="f_dealUserId" placeholder="USR001"></div>
+          <div class="field"><label>Deal Status</label><select id="f_dealStatus"><option value="Active">Active</option><option value="Matured">Matured</option><option value="Pending">Pending</option></select></div>
+          <div class="field"><label>Open / Closed</label><select id="f_dealOpenClosed"><option value="Open">Open</option><option value="Closed">Closed</option></select></div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: Investment -->
+      <div class="form-section">
+        <div class="form-section-label">💰 Investment Details</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Participated Amount <span class="req">*</span></label><input type="number" id="f_participatedAmount" placeholder="500000" oninput="calcLive();validate('participatedAmount')"><div class="err-msg">Amount required</div></div>
+          <div class="field"><label>ROI % <span class="req">*</span></label><input type="number" id="f_roi" placeholder="11" step="0.1" oninput="calcLive();validate('roi')"><div class="err-msg">ROI required</div></div>
+          <div class="field"><label>Months</label><input type="number" id="f_months" placeholder="12" oninput="calcLive()"></div>
+          <div class="field"><label>Payout Type</label><select id="f_payoutType"><option value="Monthly">Monthly</option><option value="Yearly">Yearly</option></select></div>
+          <div class="field"><label>Participated Date</label><input type="date" id="f_participatedDate" oninput="calcLive()"></div>
+          <div class="field"><label>Oxyloans Credit Amt</label><input type="number" id="f_oxyloansCreditAmt" placeholder="500000"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: IR Dates -->
+      <div class="form-section">
+        <div class="form-section-label">📅 IR Dates & Schedule</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>IR Start Date</label><input type="date" id="f_irStartDate" oninput="calcLive()"></div>
+          <div class="field"><label>IR End Date</label><input type="date" id="f_irEndDate" oninput="calcLive()"></div>
+          <div class="field"><label>IR Date - Day</label><input type="number" id="f_irDateDay" placeholder="15" min="1" max="31"></div>
+          <div class="field"><label>Days to Receive IR</label><input type="number" id="f_daysToReceiveIR" placeholder="12"></div>
+          <div class="field"><label>Monthly IR (₹)</label><input type="number" id="f_monthlyIR" placeholder="Auto-calc" oninput="calcLive()"><div class="calc-badge" id="monthlyIRHint"></div></div>
+          <div class="field"><label>Monthly IR by Oxy Apr'26</label><input type="number" id="f_monthlyIROxy" placeholder="0"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 4: Interest Tracking -->
+      <div class="form-section">
+        <div class="form-section-label">📊 Interest Tracking</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Interest Received</label><input type="number" id="f_interestReceived" placeholder="0" oninput="calcLive()"></div>
+          <div class="field"><label>Total Interest to Receive</label><input type="number" id="f_totalInterestToReceive" placeholder="Auto-calc" oninput="calcLive()"></div>
+          <div class="field"><label>Balance IR from Oxy</label><input type="number" id="f_balanceIRFromOxy" placeholder="Auto-calc"></div>
+          <div class="field"><label>Interest Paid to Oxy</label><input type="number" id="f_interestPaidToOxy" placeholder="0"></div>
+          <div class="field"><label>Invest Debit Amt</label><input type="number" id="f_investDebitAmt" placeholder="0"></div>
+          <div class="field"><label>Wallet Balance</label><input type="number" id="f_walletBalance" placeholder="Auto-calc"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Comments -->
+      <div class="form-section">
+        <div class="form-section-label">💬 Notes</div>
+        <div class="form-grid cols-2">
+          <div class="field"><label>Comments - IR</label><input type="text" id="f_commentsIR" placeholder="e.g. On time, Delayed..."></div>
+          <div class="field"><label>Additional Notes</label><input type="text" id="f_notes" placeholder="Any extra info..."></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-outline" onclick="resetForm()">🔄 Reset</button>
+        <button class="btn btn-gold" onclick="saveDeal()">💾 Save Deal</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="storage.js"></script>
+<script>
+const STORAGE_KEY = 'oxyloans_portfolio';
+let deals = [];
+let editingId = null;
+
+function loadDeals() {
+  try { deals = JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]'); } catch { deals=[]; }
+}
+
+function saveDeals() {
+  Storage.save(deals).then(results => {
+    const cloudMsg = results.jsonbin ? ' ☁️' : results.gsheets ? ' 📊' : '';
+    // Badge update handled by storage.js
+  });
+  // Also write directly for instant feedback
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
+  localStorage.setItem(STORAGE_KEY+'_ts', new Date().toISOString());
+}
+
+// ── LIVE CALC ────────────────────────────────────────────────
+function calcLive() {
+  const amt = parseFloat(document.getElementById('f_participatedAmount').value)||0;
+  const roi = parseFloat(document.getElementById('f_roi').value)||0;
+  const months = parseInt(document.getElementById('f_months').value)||0;
+  const received = parseFloat(document.getElementById('f_interestReceived').value)||0;
+
+  // Monthly IR = Amount * ROI% / 12 / 100
+  const monthlyIR = amt * roi / 12 / 100;
+  const totalInterest = months ? amt * roi * months / 12 / 100 : 0;
+  const balance = totalInterest - received;
+
+  // Auto-fill if empty
+  if(!document.getElementById('f_monthlyIR').value && monthlyIR)
+    document.getElementById('f_monthlyIR').value = Math.round(monthlyIR);
+  if(!document.getElementById('f_totalInterestToReceive').value && totalInterest)
+    document.getElementById('f_totalInterestToReceive').value = Math.round(totalInterest);
+  if(!document.getElementById('f_balanceIRFromOxy').value && balance>=0)
+    document.getElementById('f_balanceIRFromOxy').value = Math.round(balance);
+
+  document.getElementById('calcMonthlyIR').textContent = monthlyIR ? '₹'+Math.round(monthlyIR).toLocaleString('en-IN') : '₹0';
+  document.getElementById('calcTotal').textContent = totalInterest ? '₹'+Math.round(totalInterest).toLocaleString('en-IN') : '₹0';
+  document.getElementById('calcBalance').textContent = balance >= 0 ? '₹'+Math.round(balance).toLocaleString('en-IN') : '₹0';
+
+  // Days to End
+  const endDate = document.getElementById('f_irEndDate').value;
+  if(endDate) {
+    const days = Math.round((new Date(endDate) - new Date()) / 86400000);
+    document.getElementById('calcDays').textContent = days + 'd';
+    document.getElementById('calcDays').style.color = days < 0 ? 'var(--red)' : days < 60 ? 'var(--gold)' : 'var(--teal)';
+  }
+
+  if(monthlyIR) document.getElementById('monthlyIRHint').textContent = '↑ Calculated: ₹'+Math.round(monthlyIR).toLocaleString('en-IN');
+}
+
+// ── VALIDATION ───────────────────────────────────────────────
+const REQUIRED = {dealName:'f_dealName',participatedAmount:'f_participatedAmount',roi:'f_roi',name:'f_name'};
+
+function validate(field) {
+  const id = 'f_'+field;
+  const el = document.getElementById(id);
+  const parent = el?.closest('.field');
+  if(!el || !parent) return true;
+  const ok = el.value.trim() !== '';
+  parent.classList.toggle('has-error', !ok);
+  return ok;
+}
+
+function validateAll() {
+  return Object.keys(REQUIRED).map(f=>validate(f)).every(Boolean);
+}
+
+// ── MODAL ────────────────────────────────────────────────────
+function openModal(dealId=null) {
+  editingId = dealId;
+  document.getElementById('modalTitle').textContent = dealId ? 'Edit Deal' : 'Add New Deal';
+  document.getElementById('modalOverlay').classList.add('show');
+  if(dealId) {
+    const d = deals.find(x=>x.dealId===dealId);
+    if(d) populateForm(d);
+  } else {
+    resetForm();
+    document.getElementById('f_dealId').value = 'OXY'+String(Date.now()).slice(-6);
+  }
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  editingId = null;
+}
+
+function resetForm() {
+  const fields = ['dealId','dealName','name','dealUserId','participatedAmount','roi','months','participatedDate',
+    'irStartDate','irEndDate','irDateDay','daysToReceiveIR','monthlyIR','monthlyIROxy','interestReceived',
+    'totalInterestToReceive','balanceIRFromOxy','interestPaidToOxy','investDebitAmt','walletBalance',
+    'oxyloansCreditAmt','commentsIR','notes'];
+  fields.forEach(f=>{
+    const el=document.getElementById('f_'+f);
+    if(el){if(el.tagName==='SELECT')el.selectedIndex=0;else el.value='';}
+    const par=el?.closest('.field');if(par)par.classList.remove('has-error');
+  });
+  document.getElementById('f_dealId').value='OXY'+String(Date.now()).slice(-6);
+  ['calcMonthlyIR','calcTotal','calcBalance'].forEach(id=>document.getElementById(id).textContent='₹0');
+  document.getElementById('calcDays').textContent='—';
+}
+
+function populateForm(d) {
+  const map = {dealId:'f_dealId',dealName:'f_dealName',name:'f_name',dealUserId:'f_dealUserId',
+    participatedAmount:'f_participatedAmount',roi:'f_roi',months:'f_months',participatedDate:'f_participatedDate',
+    irStartDate:'f_irStartDate',irEndDate:'f_irEndDate',irDateDay:'f_irDateDay',daysToReceiveIR:'f_daysToReceiveIR',
+    monthlyIR:'f_monthlyIR',interestReceived:'f_interestReceived',totalInterestToReceive:'f_totalInterestToReceive',
+    balanceIRFromOxy:'f_balanceIRFromOxy',interestPaidToOxy:'f_interestPaidToOxy',investDebitAmt:'f_investDebitAmt',
+    walletBalance:'f_walletBalance',oxyloansCreditAmt:'f_oxyloansCreditAmt',commentsIR:'f_commentsIR',
+    dealStatus:'f_dealStatus',payoutType:'f_payoutType',dealOpenClosed:'f_dealOpenClosed'};
+  for(const[k,id] of Object.entries(map)){
+    const el=document.getElementById(id);
+    if(el&&d[k]!=null)el.value=d[k];
+  }
+  calcLive();
+}
+
+function saveDeal() {
+  if(!validateAll()){toast('Please fill in required fields','error');return;}
+  const get = id=>document.getElementById(id)?.value||'';
+  const getN = id=>parseFloat(document.getElementById(id)?.value)||0;
+
+  const amt = getN('f_participatedAmount');
+  const roi = getN('f_roi');
+  const months = getN('f_months');
+  const received = getN('f_interestReceived');
+  const endDate = get('f_irEndDate');
+  const daysToEnd = endDate ? Math.round((new Date(endDate)-new Date())/86400000) : null;
+  const autoMonthly = Math.round(amt*roi/12/100);
+  const autoTotal = Math.round(amt*roi*months/12/100);
+
+  const deal = {
+    dealId: get('f_dealId')||'OXY'+String(Date.now()).slice(-6),
+    dealName: get('f_dealName'),
+    participatedAmount: amt, roi, months,
+    participatedDate: get('f_participatedDate'),
+    irStartDate: get('f_irStartDate'),
+    irEndDate: get('f_irEndDate'),
+    daysToEnd,
+    irDateDay: getN('f_irDateDay'),
+    daysToReceiveIR: getN('f_daysToReceiveIR'),
+    monthlyIR: getN('f_monthlyIR')||autoMonthly,
+    interestReceived: received,
+    totalInterestToReceive: getN('f_totalInterestToReceive')||autoTotal,
+    balanceIRFromOxy: getN('f_balanceIRFromOxy')||(autoTotal-received),
+    interestPaidToOxy: getN('f_interestPaidToOxy'),
+    investDebitAmt: getN('f_investDebitAmt')||amt,
+    walletBalance: getN('f_walletBalance')||(amt+received),
+    oxyloansCreditAmt: getN('f_oxyloansCreditAmt')||amt,
+    dealStatus: get('f_dealStatus'),
+    payoutType: get('f_payoutType'),
+    dealOpenClosed: get('f_dealOpenClosed'),
+    dealUserId: get('f_dealUserId'),
+    name: get('f_name'),
+    commentsIR: get('f_commentsIR')
+  };
+
+  if(editingId) {
+    const idx = deals.findIndex(d=>d.dealId===editingId);
+    if(idx>=0) deals[idx]=deal;
+    toast('Deal updated successfully','success');
+  } else {
+    deals.unshift(deal);
+    toast('Deal added successfully','success');
+  }
+
+  saveDeals();
+  closeModal();
+  renderDealsTable();
+}
+
+function deleteDeal(dealId) {
+  if(!confirm('Delete this deal?')) return;
+  deals = deals.filter(d=>d.dealId!==dealId);
+  saveDeals();
+  renderDealsTable();
+  toast('Deal deleted','warn');
+}
+
+function clearAll() {
+  if(!confirm('Delete ALL deals? This cannot be undone.')) return;
+  deals=[];
+  saveDeals();
+  renderDealsTable();
+  toast('All deals cleared','warn');
+}
+
+// ── TABLE ────────────────────────────────────────────────────
+function fmt(n) {
+  if(!n&&n!==0)return'—';
+  if(Math.abs(n)>=1e5)return'₹'+(n/1e5).toFixed(1)+'L';
+  return'₹'+n.toLocaleString('en-IN');
+}
+
+function renderDealsTable() {
+  const q = document.getElementById('tableSearch').value.toLowerCase();
+  const filtered = q ? deals.filter(d=>JSON.stringify(d).toLowerCase().includes(q)) : deals;
+  document.getElementById('dealCountBadge').textContent = `(${filtered.length})`;
+  document.getElementById('stickyCount').textContent = deals.length+' deals';
+
+  const body = document.getElementById('dealsTableBody');
+  if(!filtered.length){
+    body.innerHTML=`<tr><td colspan="14" class="empty-row">No deals yet. Click "+ Add New Deal" to get started.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = filtered.map(d=>`<tr>
+    <td style="color:var(--text2);font-size:11px">${d.dealId||'—'}</td>
+    <td style="color:var(--gold);font-weight:500;max-width:160px;overflow:hidden;text-overflow:ellipsis">${d.dealName||'—'}</td>
+    <td>${fmt(d.participatedAmount)}</td>
+    <td style="color:${(d.roi||0)>=12?'var(--teal)':'var(--gold)'}">${d.roi||0}%</td>
+    <td>${fmt(d.monthlyIR)}</td>
+    <td style="color:var(--teal)">${fmt(d.interestReceived)}</td>
+    <td style="color:${(d.balanceIRFromOxy||0)>0?'var(--red)':'var(--teal)'}">${fmt(d.balanceIRFromOxy)}</td>
+    <td style="font-size:11px;color:var(--text2)">${d.irStartDate||'—'}</td>
+    <td style="font-size:11px;color:var(--text2)">${d.irEndDate||'—'}</td>
+    <td><span class="badge ${(d.dealStatus||'').toLowerCase()}">${d.dealStatus||'—'}</span></td>
+    <td><span class="badge ${(d.dealOpenClosed||'').toLowerCase()}">${d.dealOpenClosed||'—'}</span></td>
+    <td style="font-size:11px;color:var(--text2)">${d.payoutType||'—'}</td>
+    <td>${d.name||'—'}</td>
+    <td><div class="action-cell">
+      <button class="icon-btn" title="Edit" onclick="openModal('${d.dealId}')">✏️</button>
+      <button class="icon-btn" title="Delete" onclick="deleteDeal('${d.dealId}')">🗑️</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function exportDeals() {
+  if(!deals.length){toast('No deals to export','error');return;}
+  const headers=Object.keys(deals[0]);
+  const csv=[headers.join(','),...deals.map(r=>headers.map(h=>`"${r[h]??''}"`).join(','))].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='oxyloans_deals.csv';
+  a.click();
+  toast('Exported','success');
+}
+
+function toast(msg, type='success') {
+  const t=document.getElementById('toast');
+  const el=document.createElement('div');
+  el.className=`toast-msg ${type}`;
+  el.innerHTML=`${type==='success'?'✅':type==='error'?'❌':'⚠️'} ${msg}`;
+  t.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},3000);
+}
+
+loadDeals();
+renderDealsTable();
+</script>
+</body>
+</html>
